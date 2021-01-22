@@ -1,10 +1,16 @@
 import net from 'net';
 import os from 'os';
 
+/**
+ * The port the music server runs on.
+ */
 const MUSIC_SERVER_PORT = 54321;
 
 const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time));
 
+/**
+ * Finds a valid IP address.
+ */
 function findMyIp () {
 	const interfaces = os.networkInterfaces();
 	for (const [interfaceName, interfaceInfo] of Object.entries(interfaces)) {
@@ -16,10 +22,12 @@ function findMyIp () {
 			return info.address;
 		}
 	}
-
 	return;
 }
 
+/**
+ * This class is responsible for initializing and managing music servers.
+ */
 export class MusicServer {
 	server: net.Server | null;
 	connections: net.Socket[];
@@ -37,12 +45,19 @@ export class MusicServer {
 		this.port = MUSIC_SERVER_PORT;
 	}
 
+	/**
+	 * Kills, destroy and delete everything about the server.
+	 */
 	destroy () {
 		this.server = null;
 		this.connections.forEach(connection => connection.destroy());
 		this.connections = [];
 	}
 
+	/**
+	 * The main "constructor" for this class. It initializes a TCP server,
+	 * and attachest connection handlers to it.
+	 */
 	static async create (lampIp: string) {
 		const myIp = findMyIp();
 		if (!myIp) throw new Error('Failed to find my IP');
@@ -73,10 +88,16 @@ export class MusicServer {
 		return musicServer;
 	}
 
+	/**
+	 * Returns a promise that will only be resolved when at least one lamp has connected.
+	 */
 	async waitForAtLeastOneConnection () {
 		while (this.connections.length === 0) await sleep(100);
 	}
 
+	/**
+	 * Sends a message throught the server to all connected clients.
+	 */
 	sendMessage (...messages: string[]) {
 		if (!this.server) throw new Error('You must have an active server to send a message.');
 

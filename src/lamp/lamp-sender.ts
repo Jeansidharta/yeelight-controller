@@ -11,6 +11,9 @@ export type LampResponse = {
 	},
 }
 
+/**
+ * This class is responsible for sending messages to a lamp.
+ */
 export class LampSender {
 	connection: net.Socket | null;
 	lampIp: string;
@@ -20,6 +23,10 @@ export class LampSender {
 		this.connection = null;
 	}
 
+	/**
+	 * The main "constructor" of this class. It creates a TCP connection to the
+	 * target lamp, and keeps the connection open for sending messages.
+	 */
 	static async create (lampIp: string) {
 		const sender = new LampSender(lampIp);
 
@@ -42,6 +49,10 @@ export class LampSender {
 		return sender;
 	}
 
+	/**
+	 * Sends a message to the lamp that this LampSender is attached to.
+	 * @returns The result message, sent by the lamp.
+	 */
 	async sendMessage (message: string) {
 		return new Promise<LampResponse>((resolve, reject) => {
 			if (!this.connection) throw new Error('You must have an active connection.');
@@ -60,6 +71,10 @@ export class LampSender {
 		});
 	}
 
+	/**
+	 * This static function creates a LampSender and immediatly sends a message thgouth it.
+	 * It's useful if you want to send a message and disconnect.
+	 */
 	static async sendMessage (lampIp: string, message: string) {
 		const sender = await LampSender.create(lampIp);
 		const response = await sender.sendMessage(message);

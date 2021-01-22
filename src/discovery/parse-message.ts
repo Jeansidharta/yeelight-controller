@@ -1,4 +1,4 @@
-import { LampState } from "../lamp-state";
+import { LampState } from "../lamp/lamp-state";
 
 function validateMessageFirstLine(firstLine: string) {
 	if (firstLine.startsWith('NOTIFY * HTTP/1.1')) {
@@ -9,6 +9,9 @@ function validateMessageFirstLine(firstLine: string) {
 	return true;
 }
 
+/**
+ * Parses SSDP messages (both discovery and notification messages).
+ */
 export function parseMessage (message: string) {
 	const lines = message.split('\r\n');
 

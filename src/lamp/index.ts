@@ -68,6 +68,9 @@ export enum MusicAction {
 
 type LogLevels = 'none' | 'results';
 
+/**
+ * This class represents a single lamp. It handles everything about it.
+ */
 export class Lamp {
 	state: LampState;
 	sender: LampSender;
@@ -81,10 +84,20 @@ export class Lamp {
 		this.logLevel = 'none';
 	}
 
+	/**
+	 * The log level is used to determined what info should be console.logged
+	 *
+	 * @argument newLevel The new log level.
+	 * - **none**: Don't log anything. Silent mode.
+	 * - **results**: Log the result of messages.
+	 */
 	setLogLevel (newLevel: LogLevels) {
 		this.logLevel = newLevel;
 	}
 
+	/**
+	 * The main "constructor" of this class. It initializes everything.
+	 */
 	static async create (state: LampState) {
 		const sender = await LampSender.create(state.ip);
 		const lamp = new Lamp(state, sender);
@@ -92,7 +105,11 @@ export class Lamp {
 		return lamp;
 	}
 
-	async createAndSendMessage (method: string, props: any[]) {
+	/**
+	 * Creates a message and sends it to the lamp. If the music mode was turnet on,
+	 * the message will be sent by that connection.
+	 */
+	private async createAndSendMessage (method: string, props: any[]) {
 		const message = createMethodMessage(this.state.id, method, props);
 		if (this.musicServer) {
 			this.musicServer.sendMessage(message);

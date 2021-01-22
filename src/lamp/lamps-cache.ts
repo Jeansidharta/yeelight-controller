@@ -1,3 +1,11 @@
+/******************************************************************************/
+/*                           What is this file?                               */
+/*                                                                            */
+/* This file has code that stores all lamp states that were discovered in the */
+/* network.                                                                   */
+/*                                                                            */
+/******************************************************************************/
+
 import { LampState } from "./lamp-state";
 
 export const lamps: Record<number, LampState> = Object.create(null);
