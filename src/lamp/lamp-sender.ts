@@ -1,14 +1,9 @@
 import net from 'net';
+import { LampState } from './lamp-state';
 
 export type LampResponse = {
-	id: number,
-	result: any[],
-} | {
-	id: number,
-	error: {
-		code: number,
-		message: string,
-	},
+	method: string,
+	params: Record<keyof LampState, any>,
 }
 
 /**
@@ -17,10 +12,59 @@ export type LampResponse = {
 export class LampSender {
 	connection: net.Socket | null;
 	lampIp: string;
+	onUpdate?: (lampResponse: LampResponse) => void;
+
+	destroy () {
+		this.connection?.destroy();
+	}
+
+	get isConnected () {
+		return this.connection !== null;
+	}
 
 	private constructor (lampIp: string) {
 		this.lampIp = lampIp;
 		this.connection = null;
+		this.onUpdate = undefined;
+	}
+
+	async connect () {
+		const socket = await new Promise<net.Socket>(resolve => {
+			console.log('Opening Connection with lamp', this.lampIp);
+			const socket: net.Socket = net.createConnection({
+				port: 55443,
+				host: this.lampIp,
+				family: 4,
+			});
+
+			socket.on('connect', () => resolve(socket));
+
+			socket.on('error', err => {
+				console.error('ERROR ON LAMP SENDER WITH LAMP', this.lampIp, err);
+			});
+
+			socket.on('close', () => {
+				if (this.connection) {
+					console.log('Connection closed with current lamp', this.lampIp);
+					this.connection.destroy();
+					this.connection = null;
+				} else {
+					console.log('Connection closed with unknown lamp', this.lampIp);
+				}
+			});
+		});
+
+		socket.on('data', data => {
+			const dataString = data.toString('utf8');
+			try {
+				const dataObj = JSON.parse(dataString) as LampResponse;
+				if (this.onUpdate) this.onUpdate(dataObj);
+			} catch (e) {
+				console.log(`failed to parse '${dataString}'`);
+			}
+		});
+
+		this.connection = socket;
 	}
 
 	/**
@@ -29,23 +73,7 @@ export class LampSender {
 	 */
 	static async create (lampIp: string) {
 		const sender = new LampSender(lampIp);
-
-		const socket = await new Promise<net.Socket>(resolve => {
-			const socket: net.Socket = net.createConnection({
-				port: 55443,
-				host: sender.lampIp,
-				family: 4,
-			});
-
-			socket.on('connect', () => resolve(socket));
-
-			socket.on('close', () => {
-				if (sender.connection === socket) sender.connection = null;
-			});
-		});
-
-		sender.connection = socket;
-
+		sender.connect();
 		return sender;
 	}
 
@@ -53,22 +81,9 @@ export class LampSender {
 	 * Sends a message to the lamp that this LampSender is attached to.
 	 * @returns The result message, sent by the lamp.
 	 */
-	async sendMessage (message: string) {
-		return new Promise<LampResponse>((resolve, reject) => {
-			if (!this.connection) throw new Error('You must have an active connection.');
-
-			this.connection.once('data', data => {
-				const dataString = data.toString('utf8');
-				try {
-					const dataObj = JSON.parse(dataString) as LampResponse;
-					resolve(dataObj);
-				} catch (e) {
-					console.log(`failed to parse '${dataString}'`);
-					reject(e);
-				}
-			});
-			this.connection.write(message);
-		});
+	sendMessage (message: string) {
+		if (!this.connection) throw new Error('You must have an active connection.');
+		this.connection.write(message);
 	}
 
 	/**

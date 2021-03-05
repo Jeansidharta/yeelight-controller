@@ -1,4 +1,4 @@
-import { LampResponse, LampSender } from "./lamp-sender";
+import { LampSender } from "./lamp-sender";
 import { LampState } from "./lamp-state";
 import { MusicServer } from "./music-server";
 
@@ -76,12 +76,16 @@ export class Lamp {
 	sender: LampSender;
 	musicServer: MusicServer | null;
 	logLevel: LogLevels;
+	id: number;
+	ip: string;
 
 	private constructor (state: LampState, sender: LampSender) {
 		this.state = state;
 		this.sender = sender;
 		this.musicServer = null;
 		this.logLevel = 'none';
+		this.id = state.id;
+		this.ip = state.ip;
 	}
 
 	/**
@@ -102,24 +106,36 @@ export class Lamp {
 		const sender = await LampSender.create(state.ip);
 		const lamp = new Lamp(state, sender);
 
+		sender.onUpdate = updateObject => {
+			if (lamp.logLevel === 'results') console.log(lamp.id, updateObject);
+			const params = updateObject.params;
+			lamp.state = { ...lamp.state, ...params };
+		}
+
 		return lamp;
+	}
+
+	async restartSenderIfNecessary () {
+		if (!this.sender.isConnected) await this.sender.connect();
+	}
+
+	destroy () {
+		this.sender?.destroy();
+		this.musicServer?.destroy();
 	}
 
 	/**
 	 * Creates a message and sends it to the lamp. If the music mode was turnet on,
 	 * the message will be sent by that connection.
 	 */
-	private async createAndSendMessage (method: string, props: any[]) {
+	async createAndSendMessage (method: string, props: any[]) {
 		const message = createMethodMessage(this.state.id, method, props);
 		if (this.musicServer) {
 			this.musicServer.sendMessage(message);
 			return;
 		} else {
-			const result = await this.sender.sendMessage(message);
-			if (this.logLevel === 'results') {
-				console.log(result);
-			}
-			return result;
+			await this.restartSenderIfNecessary();
+			this.sender.sendMessage(message);
 		}
 	}
 
@@ -266,11 +282,11 @@ export class Lamp {
 	*
 	* Accepted on both "on" and "off" state.
 	*/
-	setScene (lampClass: 'color', color: any, brightness: number): Promise<LampResponse>;
-	setScene (lampClass: 'hsv', hue: number, saturation: number, value: number): Promise<LampResponse>;
-	setScene (lampClass: 'ct', colorTemperature: number, brightness: number): Promise<LampResponse>;
-	// setScene (lampClass: 'cf'): Promise<LampResponse>;
-	setScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): Promise<LampResponse>;
+	setScene (lampClass: 'color', color: number, brightness: number): Promise<void>;
+	setScene (lampClass: 'hsv', hue: number, saturation: number, value: number): Promise<void>;
+	setScene (lampClass: 'ct', colorTemperature: number, brightness: number): Promise<void>;
+	// setScene (lampClass: 'cf'): Promise<void>;
+	setScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): Promise<void>;
 	setScene (lampClass: LampClass, val1: any, val2: any, val3?: any) {
 		if (val3 === undefined)
 			return this.createAndSendMessage('set_scene', [lampClass, val1, val2]);
@@ -454,11 +470,11 @@ export class Lamp {
 	* Accepted on both "on" and "off" state.
 	*
 	*/
-	bgSetScene (lampClass: 'color', color: any, brightness: number): Promise<LampResponse>;
-	bgSetScene (lampClass: 'hsv', hue: number, saturation: number, value: number): Promise<LampResponse>;
-	bgSetScene (lampClass: 'ct', colorTemperature: number, brightness: number): Promise<LampResponse>;
-	// bgSetScene (lampClass: 'cf'): Promise<LampResponse>;
-	bgSetScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): Promise<LampResponse>;
+	bgSetScene (lampClass: 'color', color: any, brightness: number): Promise<void>;
+	bgSetScene (lampClass: 'hsv', hue: number, saturation: number, value: number): Promise<void>;
+	bgSetScene (lampClass: 'ct', colorTemperature: number, brightness: number): Promise<void>;
+	// bgSetScene (lampClass: 'cf'): Promise<void>;
+	bgSetScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): Promise<void>;
 	bgSetScene (lampClass: LampClass, val1: any, val2: any, val3?: any) {
 		if (val3 === undefined)
 			return this.createAndSendMessage('bg_set_scene', [lampClass, val1, val2]);

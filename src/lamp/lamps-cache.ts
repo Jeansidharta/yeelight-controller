@@ -6,20 +6,30 @@
 /*                                                                            */
 /******************************************************************************/
 
+import { Lamp } from ".";
 import { LampState } from "./lamp-state";
 
-export const lamps: Record<number, LampState> = Object.create(null);
+export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;
 
 const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time));
 
-export function addOrUpdateLamp (lampInfo: LampState) {
-	if (!lamps[lampInfo.id]) lampsCount++;
-	lamps[lampInfo.id] = lampInfo;
+export async function addOrUpdateLamp (lampInfo: LampState) {
+	if (!lamps[lampInfo.id]) {
+		lampsCount++;
+		const newLamp = await Lamp.create(lampInfo);
+		lamps[lampInfo.id] = newLamp;
+		newLamp.setLogLevel('results');
+	}
+}
+
+export function getAllFoundLamps () {
+	return Object.values(lamps);
 }
 
 export function removeLamp (lampId: number) {
 	if (lamps[lampId]) lampsCount--;
+	lamps[lampId]?.destroy();
 	delete lamps[lampId];
 }
 
