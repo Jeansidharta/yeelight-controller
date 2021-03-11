@@ -15,6 +15,7 @@ const NameLegibilityTable = {
 	'support': 'supportedMethods',
 	'flowing': 'flowing',
 	'flow_params': 'flowParams',
+	'music_on': 'isMusicModeOn',
 } as const;
 
 const ValueParsingTable = {
@@ -49,6 +50,7 @@ const ValueParsingTable = {
 		}
 		return args;
 	},
+	'music_on': (val: any) => Boolean(val),
 } as const;
 
 type NameLegibilityTable = typeof NameLegibilityTable;

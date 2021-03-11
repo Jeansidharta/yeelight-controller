@@ -75,14 +75,17 @@ class LampSender {
         if (!this.connection)
             throw new Error('You must have an active connection.');
         this.connection.write(message);
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const connection = this.connection;
             connection.on('data', function handleData(chunk) {
                 const responses = lamp_response_1.LampResponse.createFromString(chunk.toString('utf8'));
                 responses.some(response => {
-                    if (!response.isResult())
+                    if (!response.isResult() && !response.isError())
                         return false;
-                    resolve(response);
+                    if (response.isError())
+                        reject(response);
+                    else
+                        resolve(response);
                     connection.off('data', handleData);
                     return true;
                 });

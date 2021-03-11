@@ -1,16 +1,23 @@
 import { RawLampState } from "./lamp-state";
 
+type LampError = {
+	code: number,
+	message: string,
+};
+
 export class LampResponse {
 	id: number;
 	result?: ['ok'];
 	params?: Partial<RawLampState>;
 	method?: string;
+	error?: LampError;
 
-	private constructor (id: number, result?: ['ok'], params?: Partial<RawLampState>, method?: string) {
+	private constructor (id: number, result?: ['ok'], params?: Partial<RawLampState>, method?: string, error?: LampError) {
 		this.id = id;
 		this.result = result;
 		this.method = method;
 		this.params = params;
+		this.error = error;
 	}
 
 	static createFromString (responses: string) {
@@ -19,7 +26,7 @@ export class LampResponse {
 			let responseObject: LampResponse;
 			try {
 				const object = JSON.parse(response) as LampResponse;
-				responseObject = new LampResponse(object.id, object.result, object.params, object.method);
+				responseObject = new LampResponse(object.id, object.result, object.params, object.method, object.error);
 			} catch (e) {
 				console.error(`Failed to parse string '${response}' as lamp response object`);
 				throw e;
@@ -38,5 +45,9 @@ export class LampResponse {
 
 	isUpdate () {
 		return this.method === 'props' && this.params;
+	}
+
+	isError () {
+		return Boolean(this.error);
 	}
 }

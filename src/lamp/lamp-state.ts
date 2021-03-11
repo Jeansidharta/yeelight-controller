@@ -14,6 +14,7 @@ export type LampState = {
 	name: string,
 	flowing: boolean,
 	flowParams?: [number, number, number, number][],
+	isMusicModeOn: boolean,
 };
 
 export type RawLampState = {
@@ -31,4 +32,5 @@ export type RawLampState = {
 	support: string,
 	flowing: 0 | 1,
 	flow_params: string,
+	music_on: 0 | 1,
 };

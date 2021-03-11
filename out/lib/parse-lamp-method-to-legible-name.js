@@ -16,6 +16,7 @@ const NameLegibilityTable = {
     'support': 'supportedMethods',
     'flowing': 'flowing',
     'flow_params': 'flowParams',
+    'music_on': 'isMusicModeOn',
 };
 const ValueParsingTable = {
     'bright': (val) => Number(val),
@@ -53,6 +54,7 @@ const ValueParsingTable = {
         }
         return args;
     },
+    'music_on': (val) => Boolean(val),
 };
 function parseLampMethodToLegibleName(method) {
     return NameLegibilityTable[method];

@@ -1,5 +1,5 @@
 import { parseLampMethodToLegibleName, parseLampMethodValue } from "../lib/parse-lamp-method-to-legible-name";
-import { MethodValue } from "./lamp-methods";
+import { MethodValue, MusicAction } from "./lamp-methods";
 import { LampSender } from "./lamp-sender";
 import { LampState, RawLampState } from "./lamp-state";
 import { MusicServer } from "./music-server";
@@ -22,6 +22,7 @@ const defaultState: LampState = {
 	name: '',
 	flowing: false,
 	flowParams: undefined,
+	isMusicModeOn: false,
 };
 
 /**
@@ -73,8 +74,7 @@ export class Lamp {
 	 */
 	static async create (state: LampState) {
 		const sender = await LampSender.create(state.ip);
-		const lamp = new Lamp(defaultState, sender);
-		lamp.state = { ...lamp.state, ...state };
+		const lamp = new Lamp({ ...defaultState, ...state }, sender);
 
 		sender.onReceivedDataFromLamp = lampResponse => {
 			if (lampResponse.isResult()) {
@@ -89,6 +89,8 @@ export class Lamp {
 				const params = lampResponse.params;
 				if (!params) return;
 				lamp.updateState(params);
+			} else if (lampResponse.isError()) {
+				console.error(`Lamp ${lamp.id} error message:`, lampResponse.error!.message);
 			} else {
 				console.error('Received unknown message from lamp', lampResponse);
 			}
@@ -110,17 +112,17 @@ export class Lamp {
 	 * Creates a message and sends it to the lamp. If the music mode was turnet on,
 	 * the message will be sent by that connection.
 	 */
-	async createAndSendMessage (methodValue: MethodValue) {
+	async createAndSendMessage ({ method, params }: MethodValue) {
 		const methodObject = {
 			id: this.state.id,
-			method: methodValue.method,
-			params: methodValue.params,
+			method,
+			params,
 		};
 		const message = JSON.stringify(methodObject) + '\r\n';
 		if (this.musicServer) {
 			console.log('Sending through music server');
 			this.musicServer.sendMessage(message);
-		} else {	
+		} else {
 			await this.restartSenderIfNecessary();
 			await this.sender.sendMessage(message);
 		}
@@ -147,20 +149,18 @@ export class Lamp {
 				return;
 			}
 			const server = await MusicServer.create(this.state.ip);
-			const message = await this.createAndSendMessage({
-				method: 'set_music',
-				params: [action, server.ip, server.port],
-			});
-			this.musicServer = server;
-			return message;
-		} else {
 			const response = await this.createAndSendMessage({
 				method: 'set_music',
-				params: [action],
+				params: [MusicAction[action], server.ip, server.port],
 			});
-			if (this.musicServer) this.musicServer.destroy();
-			this.musicServer = null;
+			this.musicServer = server;
 			return response;
+		} else {
+			if (!this.musicServer) return;
+			this.musicServer.destroy();
+			this.musicServer = null;
+			this.updateState({ music_on: 0 });
+			return;
 		}
 	}
 }
