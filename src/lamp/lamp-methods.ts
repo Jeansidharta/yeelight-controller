@@ -457,16 +457,17 @@ export class LampMethod {
 	// bgSetScene (lampClass: 'cf'): MethodValue;
 	bgSetScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): MethodValue;
 	bgSetScene (lampClass: LampClass, val1: any, val2: any, val3?: any) {
-		if (val3 === undefined)
+		if (val3 === undefined) {
 			return {
-			method: 'bg_set_scene',
-			params: [lampClass, val1, val2],
-		};
-		else
+				method: 'bg_set_scene',
+				params: [lampClass, val1, val2],
+			};
+		} else {
 			return {
-			method: 'bg_set_scene',
-			params: [lampClass, val1, val2, val3],
-		};
+				method: 'bg_set_scene',
+				params: [lampClass, val1, val2, val3],
+			};
+		}
 	}
 
 	/**

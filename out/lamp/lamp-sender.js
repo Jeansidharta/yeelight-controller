@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LampSender = void 0;
 const net_1 = __importDefault(require("net"));
+const lamp_response_1 = require("./lamp-response");
 /**
  * This class is responsible for sending messages to a lamp.
  */
@@ -12,7 +13,7 @@ class LampSender {
     constructor(lampIp) {
         this.lampIp = lampIp;
         this.connection = null;
-        this.onUpdate = undefined;
+        this.onReceivedDataFromLamp = undefined;
     }
     destroy() {
         this.connection?.destroy();
@@ -46,12 +47,13 @@ class LampSender {
         socket.on('data', data => {
             const dataString = data.toString('utf8');
             try {
-                const dataObj = JSON.parse(dataString);
-                if (this.onUpdate)
-                    this.onUpdate(dataObj);
+                const responses = lamp_response_1.LampResponse.createFromString(dataString);
+                if (this.onReceivedDataFromLamp) {
+                    responses.forEach(response => this.onReceivedDataFromLamp(response));
+                }
             }
             catch (e) {
-                console.log(`failed to parse '${dataString}'`);
+                // Prevent whole app from crashing.
             }
         });
         this.connection = socket;
@@ -69,10 +71,23 @@ class LampSender {
      * Sends a message to the lamp that this LampSender is attached to.
      * @returns The result message, sent by the lamp.
      */
-    sendMessage(message) {
+    async sendMessage(message) {
         if (!this.connection)
             throw new Error('You must have an active connection.');
         this.connection.write(message);
+        return new Promise(resolve => {
+            const connection = this.connection;
+            connection.on('data', function handleData(chunk) {
+                const responses = lamp_response_1.LampResponse.createFromString(chunk.toString('utf8'));
+                responses.some(response => {
+                    if (!response.isResult())
+                        return false;
+                    resolve(response);
+                    connection.off('data', handleData);
+                    return true;
+                });
+            });
+        });
     }
     /**
      * This static function creates a LampSender and immediatly sends a message thgouth it.

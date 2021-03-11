@@ -40,10 +40,19 @@ function parseMessage(message) {
         console.log(`Incorrect Location header '${headers.Location}'. Skipping response...`);
         return;
     }
+    function parseColorMode() {
+        const colorModeNumber = Number(headers.color_mode);
+        if (colorModeNumber === 1)
+            return 'rgb';
+        else if (colorModeNumber === 2)
+            return 'temperature';
+        else
+            return 'hsv';
+    }
     return {
         bright: Number(headers.bright),
         colorTemperature: Number(headers.ct),
-        colorMode: Number(headers.color_mode),
+        colorMode: parseColorMode(),
         firmwareVersion: Number(headers.fw_ver),
         hue: Number(headers.hue),
         id: parseInt((headers.id || '').substr(2), 16),
@@ -52,7 +61,7 @@ function parseMessage(message) {
         name: headers.name,
         isPowerOn: headers.power === 'on',
         rgb: Number(headers.rgb),
-        sat: Number(headers.sat),
+        saturation: Number(headers.sat),
         supportedMethods: (headers.support || '').split(' '),
     };
 }

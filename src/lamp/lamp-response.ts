@@ -1,14 +1,16 @@
+import { RawLampState } from "./lamp-state";
+
 export class LampResponse {
 	id: number;
 	result?: ['ok'];
-	params?: any[];
+	params?: Partial<RawLampState>;
 	method?: string;
 
-	private constructor (id: number, result?: ['ok'], params?: any[], method?: string) {
+	private constructor (id: number, result?: ['ok'], params?: Partial<RawLampState>, method?: string) {
 		this.id = id;
 		this.result = result;
-		this.params = params;
 		this.method = method;
+		this.params = params;
 	}
 
 	static createFromString (responses: string) {

@@ -1,6 +1,7 @@
+import { parseLampMethodToLegibleName, parseLampMethodValue } from "../lib/parse-lamp-method-to-legible-name";
 import { MethodValue } from "./lamp-methods";
 import { LampSender } from "./lamp-sender";
-import { LampState } from "./lamp-state";
+import { LampState, RawLampState } from "./lamp-state";
 import { MusicServer } from "./music-server";
 
 type LogLevels = 'none' | 'results';
@@ -36,6 +37,19 @@ export class Lamp {
 		this.logLevel = newLevel;
 	}
 
+	updateState (untreatedState: Partial<RawLampState>) {
+		const treatedState: Partial<LampState> = {};
+		Object.entries(untreatedState).forEach(entry => {
+			const stateKey = entry[0] as keyof RawLampState;
+			const stateValue = entry[1] as RawLampState[typeof stateKey];
+			delete untreatedState[stateKey];
+
+			const parsedKey = parseLampMethodToLegibleName(stateKey) as keyof LampState;
+			treatedState[parsedKey] = parseLampMethodValue(stateKey, stateValue) as any as never;
+		});
+		this.state = { ...this.state, ...treatedState };
+	}
+
 	/**
 	 * The main "constructor" of this class. It initializes everything.
 	 */
@@ -54,7 +68,8 @@ export class Lamp {
 			} else if (lampResponse.isUpdate()) {
 				if (lamp.logLevel === 'results') console.log('Update received from lamp', lamp.id, lampResponse.params);
 				const params = lampResponse.params;
-				lamp.state = { ...lamp.state, ...params };
+				if (!params) return;
+				lamp.updateState(params);
 			} else {
 				console.error('Received unknown message from lamp', lampResponse);
 			}
