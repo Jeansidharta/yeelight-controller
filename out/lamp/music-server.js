@@ -6,10 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MusicServer = void 0;
 const net_1 = __importDefault(require("net"));
 const os_1 = __importDefault(require("os"));
-/**
- * The port the music server runs on.
- */
-const MUSIC_SERVER_PORT = 54321;
 const sleep = (time) => new Promise(resolve => setTimeout(resolve, time));
 /**
  * Finds a valid IP address.
@@ -31,16 +27,44 @@ function findMyIp() {
     }
     return;
 }
+async function createServerOnRandomPort() {
+    async function tryToBindToPort(port) {
+        const server = net_1.default.createServer();
+        return new Promise(resolve => {
+            try {
+                server.listen(port, () => {
+                    console.log(`listening for music on port ${port}`);
+                    resolve(server);
+                });
+            }
+            catch (e) {
+                resolve(null);
+            }
+        });
+    }
+    function generateRandomPort() {
+        const MAX_PORT = 65000;
+        const MIN_PORT = 1024;
+        return Math.floor(Math.random() * (MAX_PORT - MIN_PORT) + MIN_PORT);
+    }
+    for (let i = 0; i < 10; i++) {
+        const randomPort = generateRandomPort();
+        const server = await tryToBindToPort(randomPort);
+        if (server)
+            return [server, randomPort];
+    }
+    return null;
+}
 /**
  * This class is responsible for initializing and managing music servers.
  */
 class MusicServer {
-    constructor(ip, lampIp) {
+    constructor(ip, myPort, lampIp) {
         this.server = null;
         this.connections = [];
         this.ip = ip;
         this.lampIp = lampIp;
-        this.port = MUSIC_SERVER_PORT;
+        this.port = myPort;
     }
     /**
      * Kills, destroy and delete everything about the server.
@@ -58,15 +82,12 @@ class MusicServer {
         const myIp = findMyIp();
         if (!myIp)
             throw new Error('Failed to find my IP');
-        const musicServer = new MusicServer(myIp, lampIp);
-        // Creates the server itself.
-        const server = net_1.default.createServer();
-        await new Promise(resolve => {
-            server.listen(MUSIC_SERVER_PORT, () => {
-                console.log(`listening for music on port ${MUSIC_SERVER_PORT}`);
-                resolve();
-            });
-        });
+        const serverResult = await createServerOnRandomPort();
+        if (!serverResult) {
+            throw new Error('Failed to find unused port for music server.');
+        }
+        const [server, myPort] = serverResult;
+        const musicServer = new MusicServer(myIp, myPort, lampIp);
         musicServer.server = server;
         // Connection handler
         server.on('connection', (clientSocket) => {
@@ -91,8 +112,10 @@ class MusicServer {
      * Sends a message throught the server to all connected clients.
      */
     sendMessage(...messages) {
+        console.log('ping');
         if (!this.server)
             throw new Error('You must have an active server to send a message.');
+        console.log('I have', this.connections.length, 'connections');
         this.connections.forEach(connection => {
             messages.forEach(message => connection.write(message));
         });

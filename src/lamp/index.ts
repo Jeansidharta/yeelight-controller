@@ -131,6 +131,7 @@ export class Lamp {
 	async createAndSendMessage (method: string, props: any[]) {
 		const message = createMethodMessage(this.state.id, method, props);
 		if (this.musicServer) {
+			console.log('Sending through music server');
 			this.musicServer.sendMessage(message);
 			return;
 		} else {
@@ -349,6 +350,10 @@ export class Lamp {
 	*/
 	async setMusic (action: 'on' | 'off') {
 		if (action === 'on') {
+			if (this.musicServer) {
+				console.error('Music mode is already on');
+				return;
+			}
 			const server = await MusicServer.create(this.state.ip);
 			const message = await this.createAndSendMessage(
 				'set_music', [MusicAction[action], server.ip, server.port]

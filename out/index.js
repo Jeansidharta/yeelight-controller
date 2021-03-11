@@ -15,6 +15,30 @@ app.get('/lamp', async (_req, res) => {
     const lamps = lamps_cache_1.getAllFoundLamps();
     res.status(200).send(lamps.map(lamp => lamp.state));
 });
+app.post('/lamp/music-mode', async (req, res) => {
+    const method = req.body.method;
+    const targets = req.body.targets;
+    if (method !== 'on' && method !== 'off') {
+        return res.status(400).send('Invalid method, must be on or off. Received ' + method);
+    }
+    const responses = await Promise.allSettled(targets.map(async (targetId) => {
+        console.log(`Turning music mode ${method} at ${targetId}`);
+        const lamp = lamps_cache_1.getLamp(targetId);
+        if (!lamp)
+            return new Error(`Could not find lamp ${targetId}`);
+        try {
+            await lamp.setMusic(method);
+            return 'Ok';
+        }
+        catch (e) {
+            return e.message;
+        }
+    }));
+    if (responses.some(r => r instanceof Error))
+        return res.status(400).send(responses);
+    else
+        return res.status(200).send(responses);
+});
 app.post('/lamp/rawmethod', async (req, res) => {
     const method = req.body.method;
     const args = req.body.args;
