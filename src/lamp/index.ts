@@ -43,10 +43,21 @@ export class Lamp {
 		const sender = await LampSender.create(state.ip);
 		const lamp = new Lamp(state, sender);
 
-		sender.onUpdate = updateObject => {
-			if (lamp.logLevel === 'results') console.log(lamp.id, updateObject);
-			const params = updateObject.params;
-			lamp.state = { ...lamp.state, ...params };
+		sender.onReceivedDataFromLamp = lampResponse => {
+			if (lampResponse.isResult()) {
+				if (lampResponse.isResultOk() && lamp.logLevel === 'results') {
+					console.log('Received confirmation from lamp', lamp.id);
+				} else {
+					console.log('Received failure from lamp', lamp.id);
+				}
+				return;
+			} else if (lampResponse.isUpdate()) {
+				if (lamp.logLevel === 'results') console.log('Update received from lamp', lamp.id, lampResponse.params);
+				const params = lampResponse.params;
+				lamp.state = { ...lamp.state, ...params };
+			} else {
+				console.error('Received unknown message from lamp', lampResponse);
+			}
 		}
 
 		return lamp;
@@ -72,13 +83,12 @@ export class Lamp {
 			params: methodValue.params,
 		};
 		const message = JSON.stringify(methodObject) + '\r\n';
-		console.log({ message });
 		if (this.musicServer) {
 			console.log('Sending through music server');
 			this.musicServer.sendMessage(message);
-		} else {
+		} else {	
 			await this.restartSenderIfNecessary();
-			this.sender.sendMessage(message);
+			await this.sender.sendMessage(message);
 		}
 	}
 

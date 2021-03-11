@@ -1,10 +1,5 @@
 import net from 'net';
-import { LampState } from './lamp-state';
-
-export type LampResponse = {
-	method: string,
-	params: Record<keyof LampState, any>,
-}
+import { LampResponse } from './lamp-response';
 
 /**
  * This class is responsible for sending messages to a lamp.
@@ -12,7 +7,7 @@ export type LampResponse = {
 export class LampSender {
 	connection: net.Socket | null;
 	lampIp: string;
-	onUpdate?: (lampResponse: LampResponse) => void;
+	onReceivedDataFromLamp?: (lampResponse: LampResponse) => void;
 
 	destroy () {
 		this.connection?.destroy();
@@ -25,7 +20,7 @@ export class LampSender {
 	private constructor (lampIp: string) {
 		this.lampIp = lampIp;
 		this.connection = null;
-		this.onUpdate = undefined;
+		this.onReceivedDataFromLamp = undefined;
 	}
 
 	async connect () {
@@ -57,10 +52,12 @@ export class LampSender {
 		socket.on('data', data => {
 			const dataString = data.toString('utf8');
 			try {
-				const dataObj = JSON.parse(dataString) as LampResponse;
-				if (this.onUpdate) this.onUpdate(dataObj);
+				const responses = LampResponse.createFromString(dataString);
+				if (this.onReceivedDataFromLamp) {
+					responses.forEach(response => this.onReceivedDataFromLamp!(response));
+				}
 			} catch (e) {
-				console.log(`failed to parse '${dataString}'`);
+				// Prevent whole app from crashing.
 			}
 		});
 
@@ -81,9 +78,21 @@ export class LampSender {
 	 * Sends a message to the lamp that this LampSender is attached to.
 	 * @returns The result message, sent by the lamp.
 	 */
-	sendMessage (message: string) {
+	async sendMessage (message: string) {
 		if (!this.connection) throw new Error('You must have an active connection.');
 		this.connection.write(message);
+		return new Promise<LampResponse>(resolve => {
+			const connection = this.connection!;
+			connection.on('data', function handleData (chunk) {
+				const responses = LampResponse.createFromString(chunk.toString('utf8'));
+				responses.some(response => {
+					if (!response.isResult()) return false;
+					resolve(response);
+					connection.off('data', handleData);
+					return true;
+				});
+			});
+		});
 	}
 
 	/**
