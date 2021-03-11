@@ -46,19 +46,23 @@ app.post('/lamp/rawmethod', async (req, res) => {
 	const params = req.body.args as string[];
 	const targets = req.body.targets as number[];
 
-	const responses = await Promise.allSettled(targets.map(async targetId => {
+	const promiseResults = await Promise.allSettled(targets.map(async targetId => {
 		console.log(`Sending method '${method}' to ${targetId}`);
 		const lamp = getLamp(targetId);
-		if (!lamp) return new Error(`Could not find lamp ${targetId}`);
-		try {
-			await lamp.createAndSendMessage({ method, params });
-			return 'Ok';
-		} catch(e) {
-			return e.message;
-		}
+		if (!lamp) throw new Error(`Could not find lamp ${targetId}`);
+		await lamp.createAndSendMessage({ method, params });
+		return { id: lamp.id, state: lamp.state };
 	}));
 
-	if (responses.some(r => r instanceof Error)) return res.status(400).send(responses)
+	const responses = promiseResults.map(result => {
+		if (result.status === 'fulfilled') {
+			return result.value;
+		} else {
+			return { error: result.reason.message as string };
+		}
+	});
+
+	if (responses.some(r => (r as any).error)) return res.status(400).send(responses)
 	else return res.status(200).send(responses);
 });
 
