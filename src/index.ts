@@ -2,6 +2,7 @@ import { sendDiscoveryMessage } from "./discovery";
 import { getAllFoundLamps, getLamp } from "./lamp/lamps-cache";
 import express from 'express';
 import cors from 'cors';
+import { sleep } from "./lib/sleep";
 
 const PORT = process.env.PORT || 3056;
 
@@ -59,6 +60,18 @@ app.post('/lamp/rawmethod', async (req, res) => {
 
 	if (responses.some(r => r instanceof Error)) return res.status(400).send(responses)
 	else return res.status(200).send(responses);
+});
+
+app.post('/refresh-lamps', async (_req, res) => {
+	try {
+		await sendDiscoveryMessage();
+	} catch (e) {
+		return res.status(500).send('Failed to send discovery message to lamps');
+	}
+	await sleep(1000);
+	const lamps = getAllFoundLamps();
+
+	return res.status(200).send(lamps.map(lamp => lamp.state));
 });
 
 app.listen(PORT, () => {
