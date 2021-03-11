@@ -42,7 +42,7 @@ app.post('/lamp/music-mode', async (req, res) => {
 
 app.post('/lamp/rawmethod', async (req, res) => {
 	const method = req.body.method as string;
-	const args = req.body.args as string[];
+	const params = req.body.args as string[];
 	const targets = req.body.targets as number[];
 
 	const responses = await Promise.allSettled(targets.map(async targetId => {
@@ -50,7 +50,7 @@ app.post('/lamp/rawmethod', async (req, res) => {
 		const lamp = getLamp(targetId);
 		if (!lamp) return new Error(`Could not find lamp ${targetId}`);
 		try {
-			await lamp.createAndSendMessage(method, args);
+			await lamp.createAndSendMessage({ method, params });
 			return 'Ok';
 		} catch(e) {
 			return e.message;
