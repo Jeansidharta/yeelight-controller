@@ -13,6 +13,8 @@ const NameLegibilityTable = {
 	'rgb': 'rgb',
 	'sat': 'saturation',
 	'support': 'supportedMethods',
+	'flowing': 'flowing',
+	'flow_params': 'flowParams',
 } as const;
 
 const ValueParsingTable = {
@@ -38,6 +40,15 @@ const ValueParsingTable = {
 	'rgb': (val: any) => Number(val),
 	'sat': (val: any) => Number(val),
 	'support': (val: any) => val.split(' '),
+	'flowing': (val: any) => Boolean(val),
+	'flow_params': (val: string) => {
+		const allNumbers = val.split(',').map(num => Number(num));
+		const args: [number, number, number, number][] = [];
+		for (let i = 0; i < allNumbers.length; i += 4) {
+			args.push(allNumbers.slice(i, i + 4) as [number, number, number, number]);
+		}
+		return args;
+	},
 } as const;
 
 type NameLegibilityTable = typeof NameLegibilityTable;

@@ -14,6 +14,8 @@ const NameLegibilityTable = {
     'rgb': 'rgb',
     'sat': 'saturation',
     'support': 'supportedMethods',
+    'flowing': 'flowing',
+    'flow_params': 'flowParams',
 };
 const ValueParsingTable = {
     'bright': (val) => Number(val),
@@ -42,6 +44,15 @@ const ValueParsingTable = {
     'rgb': (val) => Number(val),
     'sat': (val) => Number(val),
     'support': (val) => val.split(' '),
+    'flowing': (val) => Boolean(val),
+    'flow_params': (val) => {
+        const allNumbers = val.split(',').map(num => Number(num));
+        const args = [];
+        for (let i = 0; i < allNumbers.length; i += 4) {
+            args.push(allNumbers.slice(i, i + 4));
+        }
+        return args;
+    },
 };
 function parseLampMethodToLegibleName(method) {
     return NameLegibilityTable[method];

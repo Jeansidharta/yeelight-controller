@@ -12,6 +12,8 @@ export type LampState = {
 	hue: number,
 	saturation: number,
 	name: string,
+	flowing: boolean,
+	flowParams?: [number, number, number, number][],
 };
 
 export type RawLampState = {
@@ -27,4 +29,6 @@ export type RawLampState = {
 	rgb: number,
 	sat: number,
 	support: string,
+	flowing: 0 | 1,
+	flow_params: string,
 };

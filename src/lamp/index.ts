@@ -6,6 +6,24 @@ import { MusicServer } from "./music-server";
 
 type LogLevels = 'none' | 'results';
 
+const defaultState: LampState = {
+	ip: '',
+	id: 0,
+	model: '',
+	firmwareVersion: 0,
+	supportedMethods: [],
+	isPowerOn: false,
+	bright: 0,
+	colorMode: 'rgb' ,
+	colorTemperature: 0,
+	rgb: 0,
+	hue: 0,
+	saturation: 0,
+	name: '',
+	flowing: false,
+	flowParams: undefined,
+};
+
 /**
  * This class represents a single lamp. It handles everything about it.
  */
@@ -55,7 +73,8 @@ export class Lamp {
 	 */
 	static async create (state: LampState) {
 		const sender = await LampSender.create(state.ip);
-		const lamp = new Lamp(state, sender);
+		const lamp = new Lamp(defaultState, sender);
+		lamp.state = { ...lamp.state, ...state };
 
 		sender.onReceivedDataFromLamp = lampResponse => {
 			if (lampResponse.isResult()) {

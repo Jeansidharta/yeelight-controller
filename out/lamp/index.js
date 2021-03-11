@@ -4,6 +4,23 @@ exports.Lamp = void 0;
 const parse_lamp_method_to_legible_name_1 = require("../lib/parse-lamp-method-to-legible-name");
 const lamp_sender_1 = require("./lamp-sender");
 const music_server_1 = require("./music-server");
+const defaultState = {
+    ip: '',
+    id: 0,
+    model: '',
+    firmwareVersion: 0,
+    supportedMethods: [],
+    isPowerOn: false,
+    bright: 0,
+    colorMode: 'rgb',
+    colorTemperature: 0,
+    rgb: 0,
+    hue: 0,
+    saturation: 0,
+    name: '',
+    flowing: false,
+    flowParams: undefined,
+};
 /**
  * This class represents a single lamp. It handles everything about it.
  */
@@ -42,7 +59,8 @@ class Lamp {
      */
     static async create(state) {
         const sender = await lamp_sender_1.LampSender.create(state.ip);
-        const lamp = new Lamp(state, sender);
+        const lamp = new Lamp(defaultState, sender);
+        lamp.state = { ...lamp.state, ...state };
         sender.onReceivedDataFromLamp = lampResponse => {
             if (lampResponse.isResult()) {
                 if (lampResponse.isResultOk() && lamp.logLevel === 'results') {
