@@ -1,4 +1,5 @@
 import net from 'net';
+import { log, LoggerLevel } from '../logger';
 import { LampResponse } from './lamp-response';
 
 /**
@@ -25,7 +26,7 @@ export class LampSender {
 
 	async connect () {
 		const socket = await new Promise<net.Socket>(resolve => {
-			console.log('Opening Connection with lamp', this.lampIp);
+			log(`Opening Connection with lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
 			const socket: net.Socket = net.createConnection({
 				port: 55443,
 				host: this.lampIp,
@@ -35,16 +36,16 @@ export class LampSender {
 			socket.on('connect', () => resolve(socket));
 
 			socket.on('error', err => {
-				console.error('ERROR ON LAMP SENDER WITH LAMP', this.lampIp, err);
+				log(`ERROR ON LAMP SENDER WITH LAMP ${this.lampIp} ${err}`, LoggerLevel.MINIMAL);
 			});
 
 			socket.on('close', () => {
 				if (this.connection) {
-					console.log('Connection closed with current lamp', this.lampIp);
+					log(`Connection closed with current lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
 					this.connection.destroy();
 					this.connection = null;
 				} else {
-					console.log('Connection closed with unknown lamp', this.lampIp);
+					log(`Connection closed with unknown lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
 				}
 			});
 		});
@@ -56,8 +57,10 @@ export class LampSender {
 				if (this.onReceivedDataFromLamp) {
 					responses.forEach(response => this.onReceivedDataFromLamp!(response));
 				}
-			} catch (e) {
+			} catch (e: unknown) {
+				const error = e as Error;
 				// Prevent whole app from crashing.
+				log(error.message, LoggerLevel.MINIMAL);
 			}
 		});
 
@@ -70,7 +73,7 @@ export class LampSender {
 	 */
 	static async create (lampIp: string) {
 		const sender = new LampSender(lampIp);
-		sender.connect();
+		// sender.connect();
 		return sender;
 	}
 

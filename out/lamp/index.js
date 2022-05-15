@@ -101,11 +101,11 @@ class Lamp {
      * Creates a message and sends it to the lamp. If the music mode was turnet on,
      * the message will be sent by that connection.
      */
-    async createAndSendMessage(methodValue) {
+    async createAndSendMessage({ method, params }) {
         const methodObject = {
             id: this.state.id,
-            method: methodValue.method,
-            params: methodValue.params,
+            method,
+            params,
         };
         const message = JSON.stringify(methodObject) + '\r\n';
         if (this.musicServer) {
@@ -146,14 +146,12 @@ class Lamp {
             return response;
         }
         else {
-            const response = await this.createAndSendMessage({
-                method: 'set_music',
-                params: [lamp_methods_1.MusicAction[action], this.musicServer?.ip, this.musicServer?.port],
-            });
-            if (this.musicServer)
-                this.musicServer.destroy();
+            if (!this.musicServer)
+                return;
+            this.musicServer.destroy();
             this.musicServer = null;
-            return response;
+            this.updateState({ music_on: 0 });
+            return;
         }
     }
 }

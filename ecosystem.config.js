@@ -24,6 +24,7 @@ module.exports = {
 
 		env: {
 			PORT: '3056',
+			LOGGER_LEVEL: 'minimal'
 		},
 	}],
 };

@@ -1,3 +1,4 @@
+import { log, LoggerLevel } from "../logger";
 import { RawLampState } from "./lamp-state";
 
 type LampError = {
@@ -23,15 +24,14 @@ export class LampResponse {
 	static createFromString (responses: string) {
 		return responses.split('\r\n').map(response => {
 			if (!response) return;
-			let responseObject: LampResponse;
+			log(`Received Response Data: ${response}`, LoggerLevel.DEBUG);
 			try {
 				const object = JSON.parse(response) as LampResponse;
-				responseObject = new LampResponse(object.id, object.result, object.params, object.method, object.error);
+				return new LampResponse(object.id, object.result, object.params, object.method, object.error);
 			} catch (e) {
-				console.error(`Failed to parse string '${response}' as lamp response object`);
+				log(`Failed to parse string '${response}' as lamp response object`, LoggerLevel.MINIMAL);
 				throw e;
 			}
-			return responseObject;
 		}).filter(r => r) as LampResponse[];
 	}
 

@@ -239,7 +239,7 @@ export class LampMethod {
 	* Accepted on both "on" and "off" state.
 	*/
 	setScene (lampClass: 'color', color: number, brightness: number): MethodValue;
-	setScene (lampClass: 'hsv', hue: number, saturation: number, value: number): MethodValue;
+	setScene (lampClass: 'hsv', hue: number, saturation: number, brightness: number): MethodValue;
 	setScene (lampClass: 'ct', colorTemperature: number, brightness: number): MethodValue;
 	// setScene (lampClass: 'cf'): MethodValue;
 	setScene (lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): MethodValue;

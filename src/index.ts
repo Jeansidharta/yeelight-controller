@@ -3,6 +3,8 @@ import { getAllFoundLamps, getLamp } from "./lamp/lamps-cache";
 import express from 'express';
 import cors from 'cors';
 import { sleep } from "./lib/sleep";
+import { jsonStringifyDOM } from "./lib/json-stringify-dom";
+import { log, LoggerLevel } from "./logger";
 
 const PORT = process.env.PORT || 3056;
 
@@ -17,6 +19,34 @@ app.get('/lamp', async (_req, res) => {
 	res.status(200).send(lamps.map(lamp => lamp.state));
 });
 
+app.get('/lamp/readable', async (_req, res) => {
+	const lamps = getAllFoundLamps();
+	const states = lamps.map(lamp => lamp.state);
+	res.status(200).send(`
+		<html>
+			<body>
+				${jsonStringifyDOM(states)}
+			</body>
+		</html>
+	`);
+});
+
+app.get('/lamp/:id/readable', async (req, res) => {
+	const id = Number(req.params.id as string);
+	if (Number.isNaN(id)) return res.status(400).send('The ID must be a number');
+	const lamp = getLamp(id);
+	if (!lamp) return res.status(404).send('Lamp not found');
+
+	res.status(200).send(`
+		<html>
+			<body>
+				${jsonStringifyDOM(lamp.state)}
+			</body>
+		</html>
+	`);
+	return;
+});
+
 app.post('/lamp/music-mode', async (req, res) => {
 	const method = req.body.method as string;
 	const targets = req.body.targets as number[];
@@ -26,7 +56,7 @@ app.post('/lamp/music-mode', async (req, res) => {
 	}
 
 	const promiseResults = await Promise.allSettled(targets.map(async targetId => {
-		console.log(`Turning music mode ${method} at ${targetId}`);
+		log(`Turning music mode ${method} at ${targetId}`, LoggerLevel.COMPLETE);
 		const lamp = getLamp(targetId);
 		if (!lamp) return new Error(`Could not find lamp ${targetId}`);
 		await lamp.setMusic(method);
@@ -49,9 +79,9 @@ app.post('/lamp/rawmethod', async (req, res) => {
 	const method = req.body.method as string;
 	const params = req.body.args as string[];
 	const targets = req.body.targets as number[];
+	log(`Received raw method "${method}" with params "${params}" for targets "${targets}"`, LoggerLevel.DEBUG);
 
 	const promiseResults = await Promise.allSettled(targets.map(async targetId => {
-		console.log(`Sending method '${method}' to ${targetId}`);
 		const lamp = getLamp(targetId);
 		if (!lamp) throw new Error(`Could not find lamp ${targetId}`);
 		await lamp.createAndSendMessage({ method, params });
@@ -83,7 +113,7 @@ app.post('/refresh-lamps', async (_req, res) => {
 });
 
 app.listen(PORT, () => {
-	console.log(`Listening on port ${PORT}`);
+	log(`Listening on port ${PORT}`, LoggerLevel.MINIMAL);
 });
 
 sendDiscoveryMessage();

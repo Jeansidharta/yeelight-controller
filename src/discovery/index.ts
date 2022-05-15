@@ -11,6 +11,7 @@
 
 import dgram from 'dgram';
 import { addOrUpdateLamp } from '../lamp/lamps-cache';
+import { log, LoggerLevel } from '../logger';
 import { parseMessage } from './parse-message';
 
 /**
@@ -78,7 +79,7 @@ async function createNotifySocket () {
 		notifySocket.bind(DISCOVERY_PORT, resolve);
 	});
 
-	console.log(`Listening for notify messages on port ${DISCOVERY_PORT}`);
+	log(`Listening for notify messages on port ${DISCOVERY_PORT}`, LoggerLevel.DEBUG);
 	notifySocket.on('message', handleSocketMessage);
 
 	return notifySocket;
@@ -91,7 +92,7 @@ async function createNotifySocket () {
  */
 export async function sendDiscoveryMessage () {
 	if (!discoverySocket) await createDiscoverySocket();
-	console.log('Sending discovery message.');
+	log('Sending discovery message...', LoggerLevel.DEBUG);
 
 	return new Promise<number>((resolve, reject) => {
 		discoverySocket!.send(DISCOVERY_MESSAGE, DISCOVERY_PORT, DISCOVERY_ADDRESS, (error, bytesSent) => {

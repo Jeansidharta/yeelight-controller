@@ -7,20 +7,21 @@
 /******************************************************************************/
 
 import { Lamp } from ".";
+import { sleep } from "../lib/sleep";
+import { log, LoggerLevel } from "../logger";
 import { LampState } from "./lamp-state";
 
 export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;
 
-const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time));
-
 export async function addOrUpdateLamp (lampInfo: LampState) {
 	if (!lamps[lampInfo.id]) {
 		lampsCount++;
-		const newLamp = await Lamp.create(lampInfo);
-		lamps[lampInfo.id] = newLamp;
-		newLamp.setLogLevel('results');
+		log(`New lamp discovered of ID ${lampInfo.id}`, LoggerLevel.COMPLETE);
 	}
+	log(`Lamp of ID ${lampInfo.id} updated`, LoggerLevel.COMPLETE);
+	const newLamp = await Lamp.create(lampInfo);
+	lamps[lampInfo.id] = newLamp;
 }
 
 export function getAllFoundLamps () {

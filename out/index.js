@@ -47,6 +47,7 @@ app.post('/lamp/rawmethod', async (req, res) => {
     const method = req.body.method;
     const params = req.body.args;
     const targets = req.body.targets;
+    console.log(targets);
     const promiseResults = await Promise.allSettled(targets.map(async (targetId) => {
         console.log(`Sending method '${method}' to ${targetId}`);
         const lamp = lamps_cache_1.getLamp(targetId);

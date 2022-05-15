@@ -1,22 +1,24 @@
 import { LampState } from "../lamp/lamp-state";
+import { log, LoggerLevel } from "../logger";
 
-function validateMessageFirstLine(firstLine: string) {
+function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | null {
 	if (firstLine.startsWith('NOTIFY * HTTP/1.1')) {
-		console.log('Received notify message');
+		return 'NOTIFY';
 	} else if (firstLine.startsWith('HTTP/1.1 200 OK')) {
-		console.log('Received discovery response message');
-	} else return false;
-	return true;
+		return 'RESPONSE';
+	}
+	return null;
 }
 
 /**
  * Parses SSDP messages (both discovery and notification messages).
  */
-export function parseMessage (message: string) {
+export function parseMessage (message: string): LampState | undefined {
 	const lines = message.split('\r\n');
+	const messageType = validateMessageFirstLine(lines.shift() || '');
 
 	// If cannot recognize the header, skip this message.
-	if (!validateMessageFirstLine(lines.shift() || '')) return;
+	if (!messageType) return;
 
 	const headers: Record<string, string> = Object.create(null);
 
@@ -29,7 +31,7 @@ export function parseMessage (message: string) {
 		const [, headerName, headerValue] = regexResult || [];
 
 		if (!headerName) {
-			console.log(`Malformated header line: '${line}'`);
+			log(`Malformated header line: '${line}'`, LoggerLevel.DEBUG);
 			continue;
 		}
 
@@ -39,7 +41,7 @@ export function parseMessage (message: string) {
 	// Collect the IP address
 	const ipMatchResult = (headers.Location || '').match(/yeelight:\/\/([\d.]+):([\d.]+)/);
 	if (!ipMatchResult || !ipMatchResult[1]) {
-		console.log(`Incorrect Location header '${headers.Location}'. Skipping response...`);
+		log(`Incorrect Location header '${headers.Location}'. Skipping response...`, LoggerLevel.DEBUG);
 		return;
 	}
 
@@ -50,13 +52,13 @@ export function parseMessage (message: string) {
 		else return 'hsv';
 	}
 
-	return {
+	const lampState = {
 		bright: Number(headers.bright),
 		colorTemperature: Number(headers.ct),
 		colorMode: parseColorMode(),
 		firmwareVersion: Number(headers.fw_ver),
 		hue: Number(headers.hue),
-		id: parseInt((headers.id || '').substr(2), 16),
+		id: parseInt((headers.id || '').substring(2), 16),
 		ip: ipMatchResult[1],
 		model: headers.model!,
 		name: headers.name!,
@@ -65,4 +67,6 @@ export function parseMessage (message: string) {
 		saturation: Number(headers.sat),
 		supportedMethods: (headers.support || '').split(' '),
 	} as LampState;
+
+	return lampState;
 }

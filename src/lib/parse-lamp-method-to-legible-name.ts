@@ -1,6 +1,7 @@
 import { LampState } from "../lamp/lamp-state";
 
 const NameLegibilityTable = {
+	'bright_with_zero': 'bright',
 	'bright': 'bright',
 	'color_mode': 'colorMode',
 	'ct': 'colorTemperature',
@@ -19,6 +20,7 @@ const NameLegibilityTable = {
 } as const;
 
 const ValueParsingTable = {
+	'bright_with_zero': (val: any) => Number(val),
 	'bright': (val: any) => Number(val),
 	'color_mode': (val: any) => {
 		if (val === 1) return 'rgb';
