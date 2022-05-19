@@ -1,4 +1,4 @@
-import { LampState } from "../lamp/lamp-state";
+import { LampState } from "../models/lamp-state";
 import { log, LoggerLevel } from "../logger";
 
 function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | null {

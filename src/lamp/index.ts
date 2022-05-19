@@ -2,7 +2,7 @@ import { parseLampMethodToLegibleName, parseLampMethodValue } from "../lib/parse
 import { log, LoggerLevel } from "../logger";
 import { MethodValue, MusicAction } from "./lamp-methods";
 import { LampSender } from "./lamp-sender";
-import { LampState, RawLampState } from "./lamp-state";
+import { LampState, RawLampState } from "../models/lamp-state";
 import { MusicServer } from "./music-server";
 
 const defaultState: LampState = {
@@ -44,7 +44,6 @@ export class Lamp {
 
 	updateState (untreatedState: Partial<RawLampState>) {
 		const treatedState: Partial<LampState> = {};
-		console.log('Received untreated state', untreatedState);
 		Object.entries(untreatedState).forEach(entry => {
 			const stateKey = entry[0] as keyof RawLampState;
 			const stateValue = entry[1] as RawLampState[typeof stateKey];
@@ -53,7 +52,6 @@ export class Lamp {
 			const parsedKey = parseLampMethodToLegibleName(stateKey) as keyof LampState;
 			treatedState[parsedKey] = parseLampMethodValue(stateKey, stateValue) as any as never;
 		});
-		console.log('Received treated state', untreatedState);
 		this.state = { ...this.state, ...treatedState };
 	}
 

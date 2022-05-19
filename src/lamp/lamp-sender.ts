@@ -26,7 +26,7 @@ export class LampSender {
 
 	async connect () {
 		const socket = await new Promise<net.Socket>(resolve => {
-			log(`Opening Connection with lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
+			log(`Connection to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
 			const socket: net.Socket = net.createConnection({
 				port: 55443,
 				host: this.lampIp,
@@ -41,11 +41,11 @@ export class LampSender {
 
 			socket.on('close', () => {
 				if (this.connection) {
-					log(`Connection closed with current lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
+					log(`Connection closed lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
 					this.connection.destroy();
 					this.connection = null;
 				} else {
-					log(`Connection closed with unknown lamp ${this.lampIp}`, LoggerLevel.COMPLETE);
+					log(`Connection closed with unknown lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
 				}
 			});
 		});
@@ -73,7 +73,7 @@ export class LampSender {
 	 */
 	static async create (lampIp: string) {
 		const sender = new LampSender(lampIp);
-		// sender.connect();
+		await sender.connect();
 		return sender;
 	}
 
@@ -82,10 +82,9 @@ export class LampSender {
 	 * @returns The result message, sent by the lamp.
 	 */
 	async sendMessage (message: string) {
-		if (!this.connection) throw new Error('You must have an active connection.');
-		this.connection.write(message);
+		const connection = this.connection;
+		if (!connection) throw new Error('You must have an active connection.');
 		return new Promise<LampResponse>((resolve, reject) => {
-			const connection = this.connection!;
 			connection.on('data', function handleData (chunk) {
 				const responses = LampResponse.createFromString(chunk.toString('utf8'));
 				responses.some(response => {
@@ -98,6 +97,8 @@ export class LampSender {
 					return true;
 				});
 			});
+
+			connection.write(message);
 		});
 	}
 

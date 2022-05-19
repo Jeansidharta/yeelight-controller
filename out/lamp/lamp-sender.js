@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LampSender = void 0;
 const net_1 = __importDefault(require("net"));
+const logger_1 = require("../logger");
 const lamp_response_1 = require("./lamp-response");
 /**
  * This class is responsible for sending messages to a lamp.
@@ -23,7 +24,7 @@ class LampSender {
     }
     async connect() {
         const socket = await new Promise(resolve => {
-            console.log('Opening Connection with lamp', this.lampIp);
+            logger_1.log(`Opening Connection with lamp ${this.lampIp}`, logger_1.LoggerLevel.COMPLETE);
             const socket = net_1.default.createConnection({
                 port: 55443,
                 host: this.lampIp,
@@ -31,16 +32,16 @@ class LampSender {
             });
             socket.on('connect', () => resolve(socket));
             socket.on('error', err => {
-                console.error('ERROR ON LAMP SENDER WITH LAMP', this.lampIp, err);
+                logger_1.log(`ERROR ON LAMP SENDER WITH LAMP ${this.lampIp} ${err}`, logger_1.LoggerLevel.MINIMAL);
             });
             socket.on('close', () => {
                 if (this.connection) {
-                    console.log('Connection closed with current lamp', this.lampIp);
+                    logger_1.log(`Connection closed with current lamp ${this.lampIp}`, logger_1.LoggerLevel.COMPLETE);
                     this.connection.destroy();
                     this.connection = null;
                 }
                 else {
-                    console.log('Connection closed with unknown lamp', this.lampIp);
+                    logger_1.log(`Connection closed with unknown lamp ${this.lampIp}`, logger_1.LoggerLevel.COMPLETE);
                 }
             });
         });
@@ -53,7 +54,9 @@ class LampSender {
                 }
             }
             catch (e) {
+                const error = e;
                 // Prevent whole app from crashing.
+                logger_1.log(error.message, logger_1.LoggerLevel.MINIMAL);
             }
         });
         this.connection = socket;
@@ -64,7 +67,7 @@ class LampSender {
      */
     static async create(lampIp) {
         const sender = new LampSender(lampIp);
-        sender.connect();
+        // sender.connect();
         return sender;
     }
     /**

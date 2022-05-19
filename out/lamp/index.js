@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Lamp = void 0;
 const parse_lamp_method_to_legible_name_1 = require("../lib/parse-lamp-method-to-legible-name");
+const logger_1 = require("../logger");
 const lamp_methods_1 = require("./lamp-methods");
 const lamp_sender_1 = require("./lamp-sender");
 const music_server_1 = require("./music-server");
@@ -31,22 +32,12 @@ class Lamp {
         this.state = state;
         this.sender = sender;
         this.musicServer = null;
-        this.logLevel = 'none';
         this.id = state.id;
         this.ip = state.ip;
     }
-    /**
-     * The log level is used to determined what info should be console.logged
-     *
-     * @argument newLevel The new log level.
-     * - **none**: Don't log anything. Silent mode.
-     * - **results**: Log the result of messages.
-     */
-    setLogLevel(newLevel) {
-        this.logLevel = newLevel;
-    }
     updateState(untreatedState) {
         const treatedState = {};
+        console.log('Received untreated state', untreatedState);
         Object.entries(untreatedState).forEach(entry => {
             const stateKey = entry[0];
             const stateValue = entry[1];
@@ -54,6 +45,7 @@ class Lamp {
             const parsedKey = parse_lamp_method_to_legible_name_1.parseLampMethodToLegibleName(stateKey);
             treatedState[parsedKey] = parse_lamp_method_to_legible_name_1.parseLampMethodValue(stateKey, stateValue);
         });
+        console.log('Received treated state', untreatedState);
         this.state = { ...this.state, ...treatedState };
     }
     /**
@@ -64,27 +56,26 @@ class Lamp {
         const lamp = new Lamp({ ...defaultState, ...state }, sender);
         sender.onReceivedDataFromLamp = lampResponse => {
             if (lampResponse.isResult()) {
-                if (lampResponse.isResultOk() && lamp.logLevel === 'results') {
-                    console.log('Received confirmation from lamp', lamp.id);
+                if (lampResponse.isResultOk()) {
+                    logger_1.log(`Received confirmation from lamp ${lamp.id}`, logger_1.LoggerLevel.COMPLETE);
                 }
                 else {
-                    console.log('Received failure from lamp', lamp.id);
+                    logger_1.log(`Received failure from lamp ${lamp.id}`, logger_1.LoggerLevel.MINIMAL);
                 }
                 return;
             }
             else if (lampResponse.isUpdate()) {
-                if (lamp.logLevel === 'results')
-                    console.log('Update received from lamp', lamp.id, lampResponse.params);
+                logger_1.log(`Update received from lamp ${lamp.id} ${JSON.stringify(lampResponse.params)}`, logger_1.LoggerLevel.COMPLETE);
                 const params = lampResponse.params;
                 if (!params)
                     return;
                 lamp.updateState(params);
             }
             else if (lampResponse.isError()) {
-                console.error(`Lamp ${lamp.id} error message:`, lampResponse.error.message);
+                logger_1.log(`Lamp ${lamp.id} error message: ${lampResponse.error.message}`, logger_1.LoggerLevel.MINIMAL);
             }
             else {
-                console.error('Received unknown message from lamp', lampResponse);
+                logger_1.log(`Received unknown message from lamp ${lampResponse}`, logger_1.LoggerLevel.MINIMAL);
             }
         };
         return lamp;
@@ -109,7 +100,7 @@ class Lamp {
         };
         const message = JSON.stringify(methodObject) + '\r\n';
         if (this.musicServer) {
-            console.log('Sending through music server');
+            logger_1.log('Sending through music server', logger_1.LoggerLevel.DEBUG);
             this.musicServer.sendMessage(message);
         }
         else {
@@ -134,7 +125,7 @@ class Lamp {
     async setMusic(action) {
         if (action === 'on') {
             if (this.musicServer) {
-                console.error('Music mode is already on');
+                logger_1.log('Music mode is already on', logger_1.LoggerLevel.MINIMAL);
                 return;
             }
             const server = await music_server_1.MusicServer.create(this.state.ip);

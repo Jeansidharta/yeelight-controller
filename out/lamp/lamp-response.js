@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LampResponse = void 0;
+const logger_1 = require("../logger");
 class LampResponse {
     constructor(id, result, params, method, error) {
         this.id = id;
@@ -13,16 +14,15 @@ class LampResponse {
         return responses.split('\r\n').map(response => {
             if (!response)
                 return;
-            let responseObject;
+            logger_1.log(`Received Response Data: ${response}`, logger_1.LoggerLevel.DEBUG);
             try {
                 const object = JSON.parse(response);
-                responseObject = new LampResponse(object.id, object.result, object.params, object.method, object.error);
+                return new LampResponse(object.id, object.result, object.params, object.method, object.error);
             }
             catch (e) {
-                console.error(`Failed to parse string '${response}' as lamp response object`);
+                logger_1.log(`Failed to parse string '${response}' as lamp response object`, logger_1.LoggerLevel.MINIMAL);
                 throw e;
             }
-            return responseObject;
         }).filter(r => r);
     }
     isResult() {

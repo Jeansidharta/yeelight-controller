@@ -26,7 +26,6 @@ async function createServerOnRandomPort () {
 		return new Promise<net.Server | null> (resolve => {
 			try {
 				server.listen(port, ()  => {
-					console.log(`listening for music on port ${port}`);
 					resolve(server);
 				});
 			} catch (e) {
@@ -121,10 +120,7 @@ export class MusicServer {
 	 * Sends a message throught the server to all connected clients.
 	 */
 	sendMessage (...messages: string[]) {
-		console.log('ping');
 		if (!this.server) throw new Error('You must have an active server to send a message.');
-
-		console.log('I have', this.connections.length, 'connections');
 		this.connections.forEach(connection => {
 			messages.forEach(message => connection.write(message));
 		});

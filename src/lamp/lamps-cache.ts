@@ -9,7 +9,7 @@
 import { Lamp } from ".";
 import { sleep } from "../lib/sleep";
 import { log, LoggerLevel } from "../logger";
-import { LampState } from "./lamp-state";
+import { LampState } from "../models/lamp-state";
 
 export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;

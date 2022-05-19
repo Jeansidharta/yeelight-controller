@@ -1,24 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseMessage = void 0;
+const logger_1 = require("../logger");
 function validateMessageFirstLine(firstLine) {
     if (firstLine.startsWith('NOTIFY * HTTP/1.1')) {
-        console.log('Received notify message');
+        return 'NOTIFY';
     }
     else if (firstLine.startsWith('HTTP/1.1 200 OK')) {
-        console.log('Received discovery response message');
+        return 'RESPONSE';
     }
-    else
-        return false;
-    return true;
+    return null;
 }
 /**
  * Parses SSDP messages (both discovery and notification messages).
  */
 function parseMessage(message) {
     const lines = message.split('\r\n');
+    const messageType = validateMessageFirstLine(lines.shift() || '');
     // If cannot recognize the header, skip this message.
-    if (!validateMessageFirstLine(lines.shift() || ''))
+    if (!messageType)
         return;
     const headers = Object.create(null);
     // Collect all headers
@@ -29,7 +29,7 @@ function parseMessage(message) {
         const regexResult = line.match(headerRegex);
         const [, headerName, headerValue] = regexResult || [];
         if (!headerName) {
-            console.log(`Malformated header line: '${line}'`);
+            logger_1.log(`Malformated header line: '${line}'`, logger_1.LoggerLevel.DEBUG);
             continue;
         }
         headers[headerName] = headerValue || '';
@@ -37,7 +37,7 @@ function parseMessage(message) {
     // Collect the IP address
     const ipMatchResult = (headers.Location || '').match(/yeelight:\/\/([\d.]+):([\d.]+)/);
     if (!ipMatchResult || !ipMatchResult[1]) {
-        console.log(`Incorrect Location header '${headers.Location}'. Skipping response...`);
+        logger_1.log(`Incorrect Location header '${headers.Location}'. Skipping response...`, logger_1.LoggerLevel.DEBUG);
         return;
     }
     function parseColorMode() {
@@ -49,13 +49,13 @@ function parseMessage(message) {
         else
             return 'hsv';
     }
-    return {
+    const lampState = {
         bright: Number(headers.bright),
         colorTemperature: Number(headers.ct),
         colorMode: parseColorMode(),
         firmwareVersion: Number(headers.fw_ver),
         hue: Number(headers.hue),
-        id: parseInt((headers.id || '').substr(2), 16),
+        id: parseInt((headers.id || '').substring(2), 16),
         ip: ipMatchResult[1],
         model: headers.model,
         name: headers.name,
@@ -64,5 +64,6 @@ function parseMessage(message) {
         saturation: Number(headers.sat),
         supportedMethods: (headers.support || '').split(' '),
     };
+    return lampState;
 }
 exports.parseMessage = parseMessage;

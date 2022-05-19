@@ -1,4 +1,4 @@
-import { LampState } from "../lamp/lamp-state";
+import { LampState } from "../models/lamp-state";
 
 const NameLegibilityTable = {
 	'bright_with_zero': 'bright',

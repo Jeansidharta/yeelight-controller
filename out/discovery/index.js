@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendDiscoveryMessage = void 0;
 const dgram_1 = __importDefault(require("dgram"));
 const lamps_cache_1 = require("../lamp/lamps-cache");
+const logger_1 = require("../logger");
 const parse_message_1 = require("./parse-message");
 /**
  * This messages must be like this.
@@ -68,7 +69,7 @@ async function createNotifySocket() {
     await new Promise(resolve => {
         notifySocket.bind(DISCOVERY_PORT, resolve);
     });
-    console.log(`Listening for notify messages on port ${DISCOVERY_PORT}`);
+    logger_1.log(`Listening for notify messages on port ${DISCOVERY_PORT}`, logger_1.LoggerLevel.DEBUG);
     notifySocket.on('message', handleSocketMessage);
     return notifySocket;
 }
@@ -80,7 +81,7 @@ async function createNotifySocket() {
 async function sendDiscoveryMessage() {
     if (!discoverySocket)
         await createDiscoverySocket();
-    console.log('Sending discovery message.');
+    logger_1.log('Sending discovery message...', logger_1.LoggerLevel.DEBUG);
     return new Promise((resolve, reject) => {
         discoverySocket.send(DISCOVERY_MESSAGE, DISCOVERY_PORT, DISCOVERY_ADDRESS, (error, bytesSent) => {
             if (error)

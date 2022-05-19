@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseLampMethodValue = exports.parseLampMethodToLegibleName = void 0;
 const NameLegibilityTable = {
+    'bright_with_zero': 'bright',
     'bright': 'bright',
     'color_mode': 'colorMode',
     'ct': 'colorTemperature',
@@ -19,6 +20,7 @@ const NameLegibilityTable = {
     'music_on': 'isMusicModeOn',
 };
 const ValueParsingTable = {
+    'bright_with_zero': (val) => Number(val),
     'bright': (val) => Number(val),
     'color_mode': (val) => {
         if (val === 1)

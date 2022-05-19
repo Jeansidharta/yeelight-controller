@@ -1,5 +1,5 @@
 import { log, LoggerLevel } from "../logger";
-import { RawLampState } from "./lamp-state";
+import { RawLampState } from "../models/lamp-state";
 
 type LampError = {
 	code: number,

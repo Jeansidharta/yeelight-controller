@@ -62,8 +62,7 @@ export enum MusicAction {
 }
 
 export class LampMethod {
-	private constructor () {
-	}
+	private constructor () {}
 
 	/**
 	* This method is used to retrieve current property of smart LED.
