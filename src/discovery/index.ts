@@ -8,7 +8,6 @@
 /*                                                                            */
 /******************************************************************************/
 
-
 import dgram from 'dgram';
 import { addOrUpdateLamp } from '../lamp/lamps-cache';
 import { log, LoggerLevel } from '../logger';
@@ -17,11 +16,8 @@ import { parseMessage } from './parse-message';
 /**
  * This messages must be like this.
  */
-const DISCOVERY_MESSAGE = (
-	'M-SEARCH * HTTP/1.1' + '\r\n' +
-	'MAN: "ssdp:discover"' + '\r\n' +
-	'ST: wifi_bulb'
-);
+const DISCOVERY_MESSAGE =
+	'M-SEARCH * HTTP/1.1' + '\r\n' + 'MAN: "ssdp:discover"' + '\r\n' + 'ST: wifi_bulb';
 
 /** The Multicast SSDP address */
 const DISCOVERY_ADDRESS = '239.255.255.250';
@@ -39,7 +35,7 @@ let discoverySocket: dgram.Socket | null = null;
  * The received message will be parsed and, if valid, will be treated as lamp information,
  * and will be stored in the lamp cache.
  */
-async function handleSocketMessage (data: Buffer) {
+async function handleSocketMessage(data: Buffer) {
 	const message = data.toString('utf8');
 	const lamp = parseMessage(message);
 	if (!lamp) return;
@@ -49,7 +45,7 @@ async function handleSocketMessage (data: Buffer) {
 /**
  * Creates and initializes the socket used for sending and receiving Discovery messages.
  */
-async function createDiscoverySocket () {
+async function createDiscoverySocket() {
 	discoverySocket = dgram.createSocket('udp4');
 
 	discoverySocket.bind(DISCOVERY_SOCKET_SOURCE_PORT);
@@ -71,7 +67,7 @@ async function createDiscoverySocket () {
 /**
  * Creates and initializes the socket used for receiving Notify messages.
  */
-async function createNotifySocket () {
+async function createNotifySocket() {
 	const notifySocket = dgram.createSocket('udp4');
 
 	// Binds the socket to the appropriate port.
@@ -90,15 +86,20 @@ async function createNotifySocket () {
  * request message, all lamps in the network will send a Discovery response message
  * to the discoverySocket.
  */
-export async function sendDiscoveryMessage () {
+export async function sendDiscoveryMessage() {
 	if (!discoverySocket) await createDiscoverySocket();
 	log('Sending discovery message...', LoggerLevel.DEBUG);
 
 	return new Promise<number>((resolve, reject) => {
-		discoverySocket!.send(DISCOVERY_MESSAGE, DISCOVERY_PORT, DISCOVERY_ADDRESS, (error, bytesSent) => {
-			if (error) reject(error);
-			else resolve(bytesSent);
-		});
+		discoverySocket!.send(
+			DISCOVERY_MESSAGE,
+			DISCOVERY_PORT,
+			DISCOVERY_ADDRESS,
+			(error, bytesSent) => {
+				if (error) reject(error);
+				else resolve(bytesSent);
+			},
+		);
 	});
 }
 

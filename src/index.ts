@@ -1,10 +1,10 @@
-import { sendDiscoveryMessage } from "./discovery";
-import { getAllFoundLamps, getLamp } from "./lamp/lamps-cache";
+import { sendDiscoveryMessage } from './discovery';
+import { getAllFoundLamps, getLamp } from './lamp/lamps-cache';
 import express from 'express';
 import cors from 'cors';
-import { sleep } from "./lib/sleep";
-import { jsonStringifyDOM } from "./lib/json-stringify-dom";
-import { log, LoggerLevel } from "./logger";
+import { sleep } from './lib/sleep';
+import { jsonStringifyDOM } from './lib/json-stringify-dom';
+import { log, LoggerLevel } from './logger';
 
 const PORT = process.env.PORT || 3056;
 
@@ -55,13 +55,15 @@ app.post('/lamp/music-mode', async (req, res) => {
 		return res.status(400).send('Invalid method, must be on or off. Received ' + method);
 	}
 
-	const promiseResults = await Promise.allSettled(targets.map(async targetId => {
-		log(`Turning music mode ${method} at ${targetId}`, LoggerLevel.COMPLETE);
-		const lamp = getLamp(targetId);
-		if (!lamp) return new Error(`Could not find lamp ${targetId}`);
-		await lamp.setMusic(method);
-		return { id: lamp.id, state: lamp.state };
-	}));
+	const promiseResults = await Promise.allSettled(
+		targets.map(async targetId => {
+			log(`Turning music mode ${method} at ${targetId}`, LoggerLevel.COMPLETE);
+			const lamp = getLamp(targetId);
+			if (!lamp) return new Error(`Could not find lamp ${targetId}`);
+			await lamp.setMusic(method);
+			return { id: lamp.id, state: lamp.state };
+		}),
+	);
 
 	const responses = promiseResults.map(result => {
 		if (result.status === 'fulfilled') {
@@ -71,7 +73,7 @@ app.post('/lamp/music-mode', async (req, res) => {
 		}
 	});
 
-	if (responses.some(r => (r as any).error)) return res.status(400).send(responses)
+	if (responses.some(r => (r as any).error)) return res.status(400).send(responses);
 	else return res.status(200).send(responses);
 });
 
@@ -79,14 +81,19 @@ app.post('/lamp/rawmethod', async (req, res) => {
 	const method = req.body.method as string;
 	const params = req.body.args as string[];
 	const targets = req.body.targets as number[];
-	log(`Received raw method "${method}" with params "${params}" for targets "${targets}"`, LoggerLevel.DEBUG);
+	log(
+		`Received raw method "${method}" with params "${params}" for targets "${targets}"`,
+		LoggerLevel.DEBUG,
+	);
 
-	const promiseResults = await Promise.allSettled(targets.map(async targetId => {
-		const lamp = getLamp(targetId);
-		if (!lamp) throw new Error(`Could not find lamp ${targetId}`);
-		await lamp.createAndSendMessage({ method, params });
-		return { id: lamp.id, state: lamp.state };
-	}));
+	const promiseResults = await Promise.allSettled(
+		targets.map(async targetId => {
+			const lamp = getLamp(targetId);
+			if (!lamp) throw new Error(`Could not find lamp ${targetId}`);
+			await lamp.createAndSendMessage({ method, params });
+			return { id: lamp.id, state: lamp.state };
+		}),
+	);
 
 	const responses = promiseResults.map(result => {
 		if (result.status === 'fulfilled') {
@@ -96,7 +103,7 @@ app.post('/lamp/rawmethod', async (req, res) => {
 		}
 	});
 
-	if (responses.some(r => (r as any).error)) return res.status(400).send(responses)
+	if (responses.some(r => (r as any).error)) return res.status(400).send(responses);
 	else return res.status(200).send(responses);
 });
 

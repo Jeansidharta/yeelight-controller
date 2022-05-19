@@ -6,15 +6,15 @@
 /*                                                                            */
 /******************************************************************************/
 
-import { Lamp } from ".";
-import { sleep } from "../lib/sleep";
-import { log, LoggerLevel } from "../logger";
-import { LampState } from "../models/lamp-state";
+import { Lamp } from '.';
+import { sleep } from '../lib/sleep';
+import { log, LoggerLevel } from '../logger';
+import { LampState } from '../models/lamp-state';
 
 export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;
 
-export async function addOrUpdateLamp (lampInfo: LampState) {
+export async function addOrUpdateLamp(lampInfo: LampState) {
 	if (!lamps[lampInfo.id]) {
 		lampsCount++;
 		log(`New lamp discovered of ID ${lampInfo.id}`, LoggerLevel.COMPLETE);
@@ -24,21 +24,21 @@ export async function addOrUpdateLamp (lampInfo: LampState) {
 	lamps[lampInfo.id] = newLamp;
 }
 
-export function getAllFoundLamps () {
+export function getAllFoundLamps() {
 	return Object.values(lamps);
 }
 
-export function removeLamp (lampId: number) {
+export function removeLamp(lampId: number) {
 	if (lamps[lampId]) lampsCount--;
 	lamps[lampId]?.destroy();
 	delete lamps[lampId];
 }
 
-export async function waitUntilHasLamp () {
+export async function waitUntilHasLamp() {
 	while (Object.values(lamps).length === 0) await sleep(500);
 }
 
-export function getLamp (lampId?: number) {
+export function getLamp(lampId?: number) {
 	if (lampId) return lamps[lampId];
 	else return Object.values(lamps)[Math.floor(Math.random() * lampsCount)];
 }

@@ -10,21 +10,21 @@ export class LampSender {
 	lampIp: string;
 	onReceivedDataFromLamp?: (lampResponse: LampResponse) => void;
 
-	destroy () {
+	destroy() {
 		this.connection?.destroy();
 	}
 
-	get isConnected () {
+	get isConnected() {
 		return this.connection !== null;
 	}
 
-	private constructor (lampIp: string) {
+	private constructor(lampIp: string) {
 		this.lampIp = lampIp;
 		this.connection = null;
 		this.onReceivedDataFromLamp = undefined;
 	}
 
-	async connect () {
+	async connect() {
 		const socket = await new Promise<net.Socket>(resolve => {
 			log(`Connection to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
 			const socket: net.Socket = net.createConnection({
@@ -71,7 +71,7 @@ export class LampSender {
 	 * The main "constructor" of this class. It creates a TCP connection to the
 	 * target lamp, and keeps the connection open for sending messages.
 	 */
-	static async create (lampIp: string) {
+	static async create(lampIp: string) {
 		const sender = new LampSender(lampIp);
 		await sender.connect();
 		return sender;
@@ -81,16 +81,16 @@ export class LampSender {
 	 * Sends a message to the lamp that this LampSender is attached to.
 	 * @returns The result message, sent by the lamp.
 	 */
-	async sendMessage (message: string) {
+	async sendMessage(message: string) {
 		const connection = this.connection;
 		if (!connection) throw new Error('You must have an active connection.');
 		return new Promise<LampResponse>((resolve, reject) => {
-			connection.on('data', function handleData (chunk) {
+			connection.on('data', function handleData(chunk) {
 				const responses = LampResponse.createFromString(chunk.toString('utf8'));
 				responses.some(response => {
 					if (!response.isResult() && !response.isError()) return false;
 
-					if (response.isError()) reject(response)
+					if (response.isError()) reject(response);
 					else resolve(response);
 
 					connection.off('data', handleData);
@@ -106,7 +106,7 @@ export class LampSender {
 	 * This static function creates a LampSender and immediatly sends a message thgouth it.
 	 * It's useful if you want to send a message and disconnect.
 	 */
-	static async sendMessage (lampIp: string, message: string) {
+	static async sendMessage(lampIp: string, message: string) {
 		const sender = await LampSender.create(lampIp);
 		const response = await sender.sendMessage(message);
 		return response;

@@ -6,7 +6,7 @@ const sleep = (time: number) => new Promise(resolve => setTimeout(resolve, time)
 /**
  * Finds a valid IP address.
  */
-function findMyIp () {
+function findMyIp() {
 	const interfaces = os.networkInterfaces();
 	for (const [interfaceName, interfaceInfo] of Object.entries(interfaces)) {
 		if (!interfaceInfo) continue;
@@ -20,12 +20,12 @@ function findMyIp () {
 	return;
 }
 
-async function createServerOnRandomPort () {
-	async function tryToBindToPort (port: number) {
+async function createServerOnRandomPort() {
+	async function tryToBindToPort(port: number) {
 		const server = net.createServer();
-		return new Promise<net.Server | null> (resolve => {
+		return new Promise<net.Server | null>(resolve => {
 			try {
-				server.listen(port, ()  => {
+				server.listen(port, () => {
 					resolve(server);
 				});
 			} catch (e) {
@@ -34,13 +34,13 @@ async function createServerOnRandomPort () {
 		});
 	}
 
-	function generateRandomPort () {
+	function generateRandomPort() {
 		const MAX_PORT = 65000;
 		const MIN_PORT = 1024;
 		return Math.floor(Math.random() * (MAX_PORT - MIN_PORT) + MIN_PORT);
 	}
 
-	for (let i = 0; i < 10; i ++) {
+	for (let i = 0; i < 10; i++) {
 		const randomPort = generateRandomPort();
 		const server = await tryToBindToPort(randomPort);
 		if (server) return [server, randomPort] as const;
@@ -60,7 +60,7 @@ export class MusicServer {
 	lampIp: string;
 	port: number;
 
-	private constructor (ip: string, myPort: number, lampIp: string) {
+	private constructor(ip: string, myPort: number, lampIp: string) {
 		this.server = null;
 		this.connections = [];
 
@@ -72,7 +72,7 @@ export class MusicServer {
 	/**
 	 * Kills, destroy and delete everything about the server.
 	 */
-	destroy () {
+	destroy() {
 		this.server = null;
 		this.connections.forEach(connection => connection.destroy());
 		this.connections = [];
@@ -82,7 +82,7 @@ export class MusicServer {
 	 * The main "constructor" for this class. It initializes a TCP server,
 	 * and attachest connection handlers to it.
 	 */
-	static async create (lampIp: string) {
+	static async create(lampIp: string) {
 		const myIp = findMyIp();
 		if (!myIp) throw new Error('Failed to find my IP');
 
@@ -96,7 +96,7 @@ export class MusicServer {
 		musicServer.server = server;
 
 		// Connection handler
-		server.on('connection', (clientSocket) => {
+		server.on('connection', clientSocket => {
 			musicServer.connections.push(clientSocket);
 
 			clientSocket.on('close', () => {
@@ -112,14 +112,14 @@ export class MusicServer {
 	/**
 	 * Returns a promise that will only be resolved when at least one lamp has connected.
 	 */
-	async waitForAtLeastOneConnection () {
+	async waitForAtLeastOneConnection() {
 		while (this.connections.length === 0) await sleep(100);
 	}
 
 	/**
 	 * Sends a message throught the server to all connected clients.
 	 */
-	sendMessage (...messages: string[]) {
+	sendMessage(...messages: string[]) {
 		if (!this.server) throw new Error('You must have an active server to send a message.');
 		this.connections.forEach(connection => {
 			messages.forEach(message => connection.write(message));

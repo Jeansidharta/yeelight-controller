@@ -1,9 +1,9 @@
-import { log, LoggerLevel } from "../logger";
-import { RawLampState } from "../models/lamp-state";
+import { log, LoggerLevel } from '../logger';
+import { RawLampState } from '../models/lamp-state';
 
 type LampError = {
-	code: number,
-	message: string,
+	code: number;
+	message: string;
 };
 
 export class LampResponse {
@@ -13,7 +13,13 @@ export class LampResponse {
 	method?: string;
 	error?: LampError;
 
-	private constructor (id: number, result?: ['ok'], params?: Partial<RawLampState>, method?: string, error?: LampError) {
+	private constructor(
+		id: number,
+		result?: ['ok'],
+		params?: Partial<RawLampState>,
+		method?: string,
+		error?: LampError,
+	) {
 		this.id = id;
 		this.result = result;
 		this.method = method;
@@ -21,33 +27,42 @@ export class LampResponse {
 		this.error = error;
 	}
 
-	static createFromString (responses: string) {
-		return responses.split('\r\n').map(response => {
-			if (!response) return;
-			log(`Received Response Data: ${response}`, LoggerLevel.DEBUG);
-			try {
-				const object = JSON.parse(response) as LampResponse;
-				return new LampResponse(object.id, object.result, object.params, object.method, object.error);
-			} catch (e) {
-				log(`Failed to parse string '${response}' as lamp response object`, LoggerLevel.MINIMAL);
-				throw e;
-			}
-		}).filter(r => r) as LampResponse[];
+	static createFromString(responses: string) {
+		return responses
+			.split('\r\n')
+			.map(response => {
+				if (!response) return;
+				log(`Received Response Data: ${response}`, LoggerLevel.DEBUG);
+				try {
+					const object = JSON.parse(response) as LampResponse;
+					return new LampResponse(
+						object.id,
+						object.result,
+						object.params,
+						object.method,
+						object.error,
+					);
+				} catch (e) {
+					log(`Failed to parse string '${response}' as lamp response object`, LoggerLevel.MINIMAL);
+					throw e;
+				}
+			})
+			.filter(r => r) as LampResponse[];
 	}
 
-	isResult () {
+	isResult() {
 		return Boolean(this.result);
 	}
 
-	isResultOk () {
+	isResultOk() {
 		return this.result && this.result[0] === 'ok';
 	}
 
-	isUpdate () {
+	isUpdate() {
 		return this.method === 'props' && this.params;
 	}
 
-	isError () {
+	isError() {
 		return Boolean(this.error);
 	}
 }

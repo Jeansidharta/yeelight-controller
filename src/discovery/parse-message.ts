@@ -1,5 +1,5 @@
-import { LampState } from "../models/lamp-state";
-import { log, LoggerLevel } from "../logger";
+import { LampState } from '../models/lamp-state';
+import { log, LoggerLevel } from '../logger';
 
 function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | null {
 	if (firstLine.startsWith('NOTIFY * HTTP/1.1')) {
@@ -13,7 +13,7 @@ function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | nu
 /**
  * Parses SSDP messages (both discovery and notification messages).
  */
-export function parseMessage (message: string): LampState | undefined {
+export function parseMessage(message: string): LampState | undefined {
 	const lines = message.split('\r\n');
 	const messageType = validateMessageFirstLine(lines.shift() || '');
 
@@ -23,7 +23,7 @@ export function parseMessage (message: string): LampState | undefined {
 	const headers: Record<string, string> = Object.create(null);
 
 	// Collect all headers
-	for(const line of lines) {
+	for (const line of lines) {
 		if (!line) continue;
 
 		const headerRegex = /^\s*(.+)\s*:\s+(.*)\s*$/;
@@ -45,7 +45,7 @@ export function parseMessage (message: string): LampState | undefined {
 		return;
 	}
 
-	function parseColorMode () {
+	function parseColorMode() {
 		const colorModeNumber = Number(headers.color_mode);
 		if (colorModeNumber === 1) return 'rgb';
 		else if (colorModeNumber === 2) return 'temperature';
