@@ -1,74 +1,32 @@
-export type MethodValue = {
-	method: string;
-	params: any[];
-};
+import {
+	AdjustAction,
+	AdjustProp,
+	ControlFlowAction,
+	EffectMode,
+	LampClass,
+	MethodReturnValue,
+	PowerMode,
+} from './enums';
 
-export type EffectMode = 'sudden' | 'smooth';
-
-/**
- * Defines to what mode the lamp will switch to.
- */
-export enum PowerMode {
-	Normal = 0,
-	TurnOnAndSwitchToCT = 1,
-	TurnOnAndSwitchToRGB = 2,
-	TurnOnAndSwitchToHSV = 3,
-	TurnOnAndSwitchToFlow = 4,
-	TurnOnAndSwitchToNightLight = 5,
-}
+export const MINIMUM_COLOR_TEMPERATURE = 1700;
+export const MAXIMUM_COLOR_TEMPERATURE = 6300;
+export const MINIMUM_EFFECT_DURATION = 30;
 
 /**
- * The number used to define what happens after a control flow is done. It's used in the "start_cf" method
- * - **RecoverState** (0): smart LED recover to the state before the color flow started.
- * - **StayState** (1): smart LED stay at the state when the flow is stopped.
- * - **TurnOff** (2): turn off the smart LED after the flow is stopped.
+ * This class contains all possible methods that a lamp can execute. No instance of
+ * it should ever be created. It's only similarity with a conventional class is aesthetical.
  */
-export enum ControlFlowAction {
-	RecoverState = 0,
-	StayState = 1,
-	TurnOff = 2,
-}
-
-/**
- * - **color**: change the smart LED to specified color and brightness.
- * - **hsv**: change the smart LED to specified color and brightness.
- * - **ct**: change the smart LED to specified ct and brightness.
- * - **cf**: start a color flow in specified fashion.
- * - **auto_delay_off**: turn on the smart LED to specified brightness and start a sleep
- *   timer to turn off the light after the specified minutes.
- */
-export type LampClass = 'color' | 'hsv' | 'ct' | 'cf' | 'auto_delay_off';
-
-/**
- * The direction of the adjustment (in set_adjust). The valid value can be
- * - **increase**: increase the specified property
- * - **decrease**: decrease the specified property
- * - **circle**: increase the specified property, after it reaches the max value, go back to minimum value.
- */
-export type AdjustAction = 'increase' | 'decrease' | 'circle';
-
-/**
- * The property to adjust (in set_adjust). The valid value can be:
- * - **bright**: adjust brightness.
- * - **ct**: adjust color temperature.
- * - **color**: adjust color. (When "prop" is "color", the "action" can only be "circle", otherwise, it will be deemed as invalid request.)
- */
-export type AdjustProp = 'bright' | 'ct' | 'color';
-
-/** Used in "set_music". Tell whether to turn the music mode on or off. */
-export enum MusicAction {
-	off = 0,
-	on = 1,
-}
-
 export class LampMethod {
+	/** This class's purpose is simply to hold all possible lamp methods. No instance of it should ever be created */
 	private constructor() {}
 
 	/**
 	 * This method is used to retrieve current property of smart LED.
-	 * The parameter is a list of property names and the response contains a list of corresponding property values. If the requested property name is not recognized by smart LED, then a empty string value ("") will be returned.
+	 * The parameter is a list of property names and the response contains a
+	 * list of corresponding property values. If the requested property name is
+	 * not recognized by smart LED, then a empty string value ("") will be returned.
 	 */
-	getProp(...props: string[]) {
+	static getProp(...props: string[]) {
 		return {
 			method: 'get_prop',
 			params: props,
@@ -78,14 +36,17 @@ export class LampMethod {
 	/**
 	 * This method is used to change the color temperature of a smart LED
 	 *
-	 * @argument temperature The target color temperature. The type's range is 1700 ~ 6500 (k).
-	 * @argument effect How the effect happens.
+	 * @argument temperature The target color temperature. The type's range is 1700 ~ 6500 (k) inclusive.
+	 * @argument effect How the effect happens. See the EffectMode enum.
 	 * @argument effectDuration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	setColorTemperatureAbx(temperature: number, effect: EffectMode, effectDuration: number) {
-		if (temperature < 1700 || temperature > 6500)
-			throw new Error('The temperature must be between 1700 and 6500');
-		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
+	static setColorTemperatureAbx(temperature: number, effect: EffectMode, effectDuration: number) {
+		if (temperature < MINIMUM_COLOR_TEMPERATURE || temperature > MAXIMUM_COLOR_TEMPERATURE)
+			throw new Error(
+				`The temperature must be between ${MINIMUM_COLOR_TEMPERATURE} and ${MAXIMUM_COLOR_TEMPERATURE}`,
+			);
+		if (effectDuration < MINIMUM_EFFECT_DURATION)
+			throw new Error(`The effectDuration must be at least ${MINIMUM_EFFECT_DURATION}`);
 		return {
 			method: 'set_ct_abx',
 			params: [temperature, effect, effectDuration],
@@ -99,10 +60,11 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	setRGB(rgbValue: number, effect: EffectMode, effectDuration: number) {
+	static setRGB(rgbValue: number, effect: EffectMode, effectDuration: number) {
 		if (rgbValue < 0 || rgbValue > 0xffffff)
 			throw new Error('The rgbValue must be between 0 and 0xFFFFFF');
-		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
+		if (effectDuration < MINIMUM_EFFECT_DURATION)
+			throw new Error('The effectDuration must be at least 30');
 		return {
 			method: 'set_rgb',
 			params: [rgbValue, effect, effectDuration],
@@ -117,7 +79,7 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	setHsv(hue: number, saturation: number, effect: EffectMode, effectDuration: number) {
+	static setHsv(hue: number, saturation: number, effect: EffectMode, effectDuration: number) {
 		if (hue < 0 || hue > 359) throw new Error('The hue must be between 0 and 359');
 		if (saturation < 0 || saturation > 100)
 			throw new Error('The saturation must bet between 0 and 100');
@@ -135,7 +97,7 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	setBright(brightness: number, effect: EffectMode, effectDuration: number) {
+	static setBright(brightness: number, effect: EffectMode, effectDuration: number) {
 		if (brightness < 1 || brightness > 100)
 			throw new Error('The brightness must be between 1 and 100');
 		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
@@ -153,7 +115,7 @@ export class LampMethod {
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 * @argument mode To what mode the lamp goes into when it turns on.
 	 */
-	setPower(
+	static setPower(
 		power: 'on' | 'off',
 		effect: EffectMode,
 		effectDuration: number,
@@ -171,7 +133,7 @@ export class LampMethod {
 	 * This method is defined because sometimes user may just want to flip the state
 	 * without knowing the current state.
 	 */
-	toggle() {
+	static toggle() {
 		return {
 			method: 'toggle',
 			params: [],
@@ -187,7 +149,7 @@ export class LampMethod {
 	 * and want to make this state as a default initial state (every time the smart LED is powered),
 	 * then he can use set_default to do a snapshot.
 	 */
-	setDefault() {
+	static setDefault() {
 		return {
 			method: 'set_default',
 			params: [],
@@ -222,7 +184,7 @@ export class LampMethod {
 	 * this value is -1, brightness in this tuple is ignored (only color or Color Temperature
 	 * change takes effect).
 	 */
-	startControlFlow(
+	static startControlFlow(
 		count: number,
 		action: ControlFlowAction,
 		flowExpression: [number, 1 | 2 | 7, number, number][],
@@ -236,7 +198,7 @@ export class LampMethod {
 	/**
 	 * This method is used to stop a running color flow.
 	 */
-	stopControlFlow() {
+	static stopControlFlow() {
 		return {
 			method: 'stop_cf',
 			params: [],
@@ -250,12 +212,21 @@ export class LampMethod {
 	 *
 	 * Accepted on both "on" and "off" state.
 	 */
-	setScene(lampClass: 'color', color: number, brightness: number): MethodValue;
-	setScene(lampClass: 'hsv', hue: number, saturation: number, brightness: number): MethodValue;
-	setScene(lampClass: 'ct', colorTemperature: number, brightness: number): MethodValue;
-	// setScene (lampClass: 'cf'): MethodValue;
-	setScene(lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): MethodValue;
-	setScene(lampClass: LampClass, val1: any, val2: any, val3?: any) {
+	static setScene(lampClass: 'color', color: number, brightness: number): MethodReturnValue;
+	static setScene(
+		lampClass: 'hsv',
+		hue: number,
+		saturation: number,
+		brightness: number,
+	): MethodReturnValue;
+	static setScene(lampClass: 'ct', colorTemperature: number, brightness: number): MethodReturnValue;
+	// static setScene (lampClass: 'cf'): MethodValue;
+	static setScene(
+		lampClass: 'auto_delay_off',
+		brightness: number,
+		sleepTimer: number,
+	): MethodReturnValue;
+	static setScene(lampClass: LampClass, val1: any, val2: any, val3?: any) {
 		if (val3 === undefined)
 			return {
 				method: 'set_scene',
@@ -280,7 +251,7 @@ export class LampMethod {
 	 *
 	 * @argument value The length of the timer (in minutes).
 	 */
-	cronAdd(value: number) {
+	static cronAdd(value: number) {
 		return {
 			method: 'cron_add',
 			params: [0, value],
@@ -290,7 +261,7 @@ export class LampMethod {
 	/**
 	 * This method is used to retrieve the setting of the current cron job of the specified type.
 	 */
-	cronGet() {
+	static cronGet() {
 		return {
 			method: 'cron_get',
 			params: [],
@@ -300,10 +271,10 @@ export class LampMethod {
 	/**
 	 * This method is used to stop the specified cron job.
 	 */
-	cronDel() {
+	static cronDel() {
 		return {
 			method: 'cron_del',
-			params: [0],
+			params: [1],
 		};
 	}
 
@@ -312,7 +283,7 @@ export class LampMethod {
 	 * LED without knowing the current value, it's main used by controllers.
 	 *
 	 */
-	setAdjust(control: AdjustAction, prop: AdjustProp) {
+	static setAdjust(control: AdjustAction, prop: AdjustProp) {
 		return {
 			method: 'set_adjust',
 			params: [control, prop],
@@ -333,7 +304,7 @@ export class LampMethod {
 	 *
 	 * @argument action Action of set_music command
 	 */
-	async setMusic(action: 'on' | 'off', serverIp: string, serverPort: number) {
+	static async setMusic(action: 'on' | 'off', serverIp: string, serverPort: number) {
 		return {
 			method: 'set_music',
 			params: [action, serverIp, serverPort],
@@ -351,7 +322,7 @@ export class LampMethod {
 	 *
 	 * @argument name The name of the device.
 	 */
-	setName(name: string) {
+	static setName(name: string) {
 		return {
 			method: 'set_name',
 			params: [name],
@@ -367,8 +338,9 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	bgSetRGB(rgbValue: number, effect: EffectMode, effectDuration: number) {
-		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
+	static bgSetRGB(rgbValue: number, effect: EffectMode, effectDuration: number) {
+		if (effectDuration < MINIMUM_EFFECT_DURATION)
+			throw new Error('The effectDuration must be at least 30');
 		return {
 			method: 'bg_set_rgb',
 			params: [rgbValue, effect, effectDuration],
@@ -385,7 +357,7 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	bgSetHsv(hue: number, saturation: number, effect: EffectMode, effectDuration: number) {
+	static bgSetHsv(hue: number, saturation: number, effect: EffectMode, effectDuration: number) {
 		if (hue < 0 || hue > 359) throw new Error('The hue must be between 0 and 359');
 		if (saturation < 0 || saturation > 100)
 			throw new Error('The saturation must bet between 0 and 100');
@@ -405,8 +377,8 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	bgSetColorTemperatureAbx(temperature: number, effect: EffectMode, effectDuration: number) {
-		if (temperature < 1700 || temperature > 6500)
+	static bgSetColorTemperatureAbx(temperature: number, effect: EffectMode, effectDuration: number) {
+		if (temperature < MINIMUM_COLOR_TEMPERATURE || temperature > MAXIMUM_COLOR_TEMPERATURE)
 			throw new Error('The temperature must be between 1700 and 6500');
 		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
 		return {
@@ -443,7 +415,7 @@ export class LampMethod {
 	 * this value is -1, brightness in this tuple is ignored (only color or Color Temperature
 	 * change takes effect).
 	 */
-	bgStartControlFlow(
+	static bgStartControlFlow(
 		count: number,
 		action: ControlFlowAction,
 		flowExpression: [number, 1 | 2 | 7, number, number][],
@@ -456,7 +428,7 @@ export class LampMethod {
 	/**
 	 * This method is used to stop a running color flow.
 	 */
-	bgStopControlFlow() {
+	static bgStopControlFlow() {
 		return {
 			method: 'bg_stop_cf',
 			params: [],
@@ -471,12 +443,25 @@ export class LampMethod {
 	 * Accepted on both "on" and "off" state.
 	 *
 	 */
-	bgSetScene(lampClass: 'color', color: any, brightness: number): MethodValue;
-	bgSetScene(lampClass: 'hsv', hue: number, saturation: number, value: number): MethodValue;
-	bgSetScene(lampClass: 'ct', colorTemperature: number, brightness: number): MethodValue;
-	// bgSetScene (lampClass: 'cf'): MethodValue;
-	bgSetScene(lampClass: 'auto_delay_off', brightness: number, sleepTimer: number): MethodValue;
-	bgSetScene(lampClass: LampClass, val1: any, val2: any, val3?: any) {
+	static bgSetScene(lampClass: 'color', color: any, brightness: number): MethodReturnValue;
+	static bgSetScene(
+		lampClass: 'hsv',
+		hue: number,
+		saturation: number,
+		value: number,
+	): MethodReturnValue;
+	static bgSetScene(
+		lampClass: 'ct',
+		colorTemperature: number,
+		brightness: number,
+	): MethodReturnValue;
+	// static bgSetScene (lampClass: 'cf'): MethodValue;
+	static bgSetScene(
+		lampClass: 'auto_delay_off',
+		brightness: number,
+		sleepTimer: number,
+	): MethodReturnValue;
+	static bgSetScene(lampClass: LampClass, val1: any, val2: any, val3?: any) {
 		if (val3 === undefined) {
 			return {
 				method: 'bg_set_scene',
@@ -499,7 +484,7 @@ export class LampMethod {
 	 * and want to make this state as a default initial state (every time the background light is powered),
 	 * then he can use set_default to do a snapshot.
 	 */
-	bgSetDefault() {
+	static bgSetDefault() {
 		return {
 			method: 'bg_set_default',
 			params: [],
@@ -514,7 +499,7 @@ export class LampMethod {
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 * @argument mode To what mode the lamp goes into when it turns on.
 	 */
-	bgSetPower(
+	static bgSetPower(
 		power: 'on' | 'off',
 		effect: EffectMode,
 		effectDuration: number,
@@ -534,7 +519,7 @@ export class LampMethod {
 	 * @argument effect How the effect happens.
 	 * @argument effectDuration The duration of the effect in milliseconds. Min is 30.
 	 */
-	bgSetBright(brightness: number, effect: EffectMode, effectDuration: number) {
+	static bgSetBright(brightness: number, effect: EffectMode, effectDuration: number) {
 		if (brightness < 1 || brightness > 100)
 			throw new Error('The brightness must be between 1 and 100');
 		if (effectDuration < 30) throw new Error('The effectDuration must be at least 30');
@@ -548,7 +533,7 @@ export class LampMethod {
 	 * This method is used to change brightness, Color Temperature or color of a background
 	 * light without knowing the current value, it's main used by controllers.
 	 */
-	bgSetAdjust() {
+	static bgSetAdjust() {
 		return {
 			method: 'bg_set_adjust',
 			params: [],
@@ -560,7 +545,7 @@ export class LampMethod {
 	 * This method is defined because sometimes user may just want to flip the state
 	 * without knowing the current state.
 	 */
-	bgToggle() {
+	static bgToggle() {
 		return {
 			method: 'bg_toggle',
 			params: [],
@@ -574,7 +559,7 @@ export class LampMethod {
 	 * main light, “bg_toggle” is used to toggle background light while “dev_toggle” is used to
 	 * toggle both light at the same time.
 	 */
-	devToggle() {
+	static devToggle() {
 		return {
 			method: 'dev_toggle',
 			params: [],
@@ -587,7 +572,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	adjustBright(percentage: number, duration: number) {
+	static adjustBright(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');
@@ -603,7 +588,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	adjustColorTemperature(percentage: number, duration: number) {
+	static adjustColorTemperature(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');
@@ -621,7 +606,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	adjustColor(percentage: number, duration: number) {
+	static adjustColor(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');
@@ -637,7 +622,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	bgAdjustBright(percentage: number, duration: number) {
+	static bgAdjustBright(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');
@@ -653,7 +638,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	bgAdjustColorTemperature(percentage: number, duration: number) {
+	static bgAdjustColorTemperature(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');
@@ -671,7 +656,7 @@ export class LampMethod {
 	 * @argument percentage The percentage to be adjusted. The range is: -100 ~ 100
 	 * @argument duration The duration of the effect in milliseconds. Minimum is 30 milliseconds
 	 */
-	bgAdjustColor(percentage: number, duration: number) {
+	static bgAdjustColor(percentage: number, duration: number) {
 		if (percentage < -100 || percentage > 100)
 			throw new Error('The percentage should be between -100 and 100.');
 		if (duration < 30) throw new Error('The duration must be at least 30');

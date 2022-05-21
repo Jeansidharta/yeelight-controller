@@ -3,7 +3,7 @@ import {
 	parseLampMethodValue,
 } from '../lib/parse-lamp-method-to-legible-name';
 import { log, LoggerLevel } from '../logger';
-import { MethodValue, MusicAction } from './lamp-methods';
+import { MethodReturnValue, MusicAction } from './lamp-methods/enums';
 import { LampSender } from './lamp-sender';
 import { LampState, RawLampState } from '../models/lamp-state';
 import { MusicServer } from './music-server';
@@ -104,7 +104,7 @@ export class Lamp {
 	 * Creates a message and sends it to the lamp. If the music mode was turnet on,
 	 * the message will be sent by that connection.
 	 */
-	async createAndSendMessage({ method, params }: MethodValue) {
+	async createAndSendMessage({ method, params }: MethodReturnValue) {
 		const methodObject = {
 			id: this.state.id,
 			method,
