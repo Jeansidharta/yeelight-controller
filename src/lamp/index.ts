@@ -7,6 +7,7 @@ import { MethodReturnValue, MusicAction } from './lamp-methods/enums';
 import { LampSender } from './lamp-sender';
 import { LampState, RawLampState } from '../models/lamp-state';
 import { MusicServer } from './music-server';
+import { translateLampId } from '../lib/translate-lamp-id';
 
 const defaultState: LampState = {
 	ip: '',
@@ -74,21 +75,26 @@ export class Lamp {
 		sender.onReceivedDataFromLamp = lampResponse => {
 			if (lampResponse.isResult()) {
 				if (lampResponse.isResultOk()) {
-					log(`Received confirmation from lamp ${lamp.id}`, LoggerLevel.COMPLETE);
+					log(`Received confirmation from lamp ${translateLampId(this.id)}`, LoggerLevel.COMPLETE);
 				} else {
-					log(`Received failure from lamp ${lamp.id}`, LoggerLevel.MINIMAL);
+					log(`Received failure from lamp ${translateLampId(this.id)}`, LoggerLevel.MINIMAL);
 				}
 				return;
 			} else if (lampResponse.isUpdate()) {
 				log(
-					`Update received from lamp ${lamp.id} ${JSON.stringify(lampResponse.params)}`,
+					`Update received from lamp ${translateLampId(this.id)} ${JSON.stringify(
+						lampResponse.params,
+					)}`,
 					LoggerLevel.COMPLETE,
 				);
 				const params = lampResponse.params;
 				if (!params) return;
 				lamp.updateState(params);
 			} else if (lampResponse.isError()) {
-				log(`Lamp ${lamp.id} error message: ${lampResponse.error!.message}`, LoggerLevel.MINIMAL);
+				log(
+					`Lamp ${translateLampId(this.id)} error message: ${lampResponse.error!.message}`,
+					LoggerLevel.MINIMAL,
+				);
 			} else {
 				log(`Received unknown message from lamp ${lampResponse}`, LoggerLevel.MINIMAL);
 			}

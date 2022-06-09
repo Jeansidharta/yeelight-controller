@@ -26,14 +26,17 @@ export class LampSender {
 
 	async connect() {
 		const socket = await new Promise<net.Socket>(resolve => {
-			log(`Connection to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
+			log(`Connecing to lamp on "${this.lampIp}"...`, LoggerLevel.COMPLETE);
 			const socket: net.Socket = net.createConnection({
 				port: 55443,
 				host: this.lampIp,
 				family: 4,
 			});
 
-			socket.on('connect', () => resolve(socket));
+			socket.on('connect', () => {
+				log(`Connected to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
+				resolve(socket);
+			});
 
 			socket.on('error', err => {
 				log(`ERROR ON LAMP SENDER WITH LAMP ${this.lampIp} ${err}`, LoggerLevel.MINIMAL);
