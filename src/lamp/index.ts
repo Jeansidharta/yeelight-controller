@@ -39,17 +39,19 @@ const defaultState: LampState = {
  */
 export class Lamp {
 	state: LampState;
-	sender: LampSender;
-	musicServer: MusicServer | null;
-	id: number;
-	ip: string;
+	sender: LampSender | null = null;
+	musicServer: MusicServer | null = null;
 
-	private constructor(state: LampState, sender: LampSender) {
-		this.state = state;
-		this.sender = sender;
-		this.musicServer = null;
-		this.id = state.id;
-		this.ip = state.ip;
+	get id() {
+		return this.state.id;
+	}
+
+	get ip() {
+		return this.state.ip;
+	}
+
+	constructor(state: LampState) {
+		this.state = { ...defaultState, ...state };
 	}
 
 	updateState(untreatedState: Partial<RawLampState>) {
@@ -65,14 +67,9 @@ export class Lamp {
 		this.state = { ...this.state, ...treatedState };
 	}
 
-	/**
-	 * The main "constructor" of this class. It initializes everything.
-	 */
-	static async create(state: LampState) {
-		const sender = await LampSender.create(state.ip);
-		const lamp = new Lamp({ ...defaultState, ...state }, sender);
-
-		sender.onReceivedDataFromLamp = lampResponse => {
+	async createSender() {
+		this.sender = await LampSender.create(this.ip);
+		this.sender.onReceivedDataFromLamp = lampResponse => {
 			if (lampResponse.isResult()) {
 				if (lampResponse.isResultOk()) {
 					log(`Received confirmation from lamp ${translateLampId(this.id)}`, LoggerLevel.COMPLETE);
@@ -89,7 +86,7 @@ export class Lamp {
 				);
 				const params = lampResponse.params;
 				if (!params) return;
-				lamp.updateState(params);
+				this.updateState(params);
 			} else if (lampResponse.isError()) {
 				log(
 					`Lamp ${translateLampId(this.id)} error message: ${lampResponse.error!.message}`,
@@ -99,12 +96,11 @@ export class Lamp {
 				log(`Received unknown message from lamp ${lampResponse}`, LoggerLevel.MINIMAL);
 			}
 		};
-
-		return lamp;
 	}
 
 	async restartSenderIfNecessary() {
-		if (!this.sender.isConnected) await this.sender.connect();
+		if (!this.sender) await this.createSender();
+		if (!this.sender!.isConnected) await this.sender!.connect();
 	}
 
 	destroy() {
@@ -128,7 +124,7 @@ export class Lamp {
 			this.musicServer.sendMessage(message);
 		} else {
 			await this.restartSenderIfNecessary();
-			await this.sender.sendMessage(message);
+			await this.sender!.sendMessage(message);
 		}
 	}
 
