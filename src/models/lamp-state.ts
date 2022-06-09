@@ -15,6 +15,12 @@ export type LampState = {
 	flowing: boolean;
 	flowParams?: [number, number, number, number][];
 	isMusicModeOn: boolean;
+	smartSwitch: boolean;
+	initPowerOption: number;
+	lanControl: boolean;
+	delayOff: boolean;
+	saveState: number;
+	brightWithZero: number;
 };
 
 export type RawLampState = {
@@ -33,4 +39,10 @@ export type RawLampState = {
 	flowing: 0 | 1;
 	flow_params: string;
 	music_on: 0 | 1;
+	smart_switch: 0 | 1;
+	init_power_opt: number;
+	lan_ctrl: 0 | 1;
+	delayoff: 0 | 1;
+	save_state: number;
+	bright_with_zero: number;
 };

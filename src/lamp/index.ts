@@ -25,6 +25,12 @@ const defaultState: LampState = {
 	flowing: false,
 	flowParams: undefined,
 	isMusicModeOn: false,
+	brightWithZero: 0,
+	delayOff: false,
+	initPowerOption: 0,
+	lanControl: true,
+	saveState: 0,
+	smartSwitch: false,
 };
 
 /**

@@ -1,8 +1,8 @@
-import { LampState } from '../models/lamp-state';
+import { LampState, RawLampState } from '../models/lamp-state';
 
-const NameLegibilityTable = {
+const NameLegibilityTable: Record<keyof RawLampState, keyof LampState> = {
 	bright_with_zero: 'bright',
-	bright: 'bright',
+	bright: 'brightWithZero',
 	color_mode: 'colorMode',
 	ct: 'colorTemperature',
 	fw_ver: 'firmwareVersion',
@@ -17,9 +17,16 @@ const NameLegibilityTable = {
 	flowing: 'flowing',
 	flow_params: 'flowParams',
 	music_on: 'isMusicModeOn',
+	smart_switch: 'smartSwitch',
+	init_power_opt: 'initPowerOption',
+	lan_ctrl: 'lanControl',
+	delayoff: 'delayOff',
+	save_state: 'saveState',
 } as const;
 
-const ValueParsingTable = {
+type NameLegibilityTable = typeof NameLegibilityTable;
+
+const ValueParsingTable: Record<keyof RawLampState, (val: any) => any> = {
 	bright_with_zero: (val: any) => Number(val),
 	bright: (val: any) => Number(val),
 	color_mode: (val: any) => {
@@ -32,7 +39,7 @@ const ValueParsingTable = {
 	hue: (val: any) => Number(val),
 	id: (val: any) => {
 		if (typeof val === 'string') {
-			return parseInt(val.substr(2), 16);
+			return parseInt(val.substring(2), 16);
 		} else {
 			return Number(val);
 		}
@@ -53,9 +60,12 @@ const ValueParsingTable = {
 		return args;
 	},
 	music_on: (val: any) => Boolean(val),
+	smart_switch: (val: any) => Boolean(val),
+	init_power_opt: (val: any) => Number(val),
+	lan_ctrl: (val: any) => Boolean(val),
+	delayoff: (val: any) => Boolean(val),
+	save_state: (val: any) => val,
 } as const;
-
-type NameLegibilityTable = typeof NameLegibilityTable;
 
 export function parseLampMethodToLegibleName<T extends keyof NameLegibilityTable>(
 	method: T,
