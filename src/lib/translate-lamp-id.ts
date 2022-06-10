@@ -5,12 +5,15 @@ import {
 	LAMP_ID_STRIP_JEAN,
 	LAMP_ID_TV,
 	LAMP_ID_WINDOW,
+	LAMP_ID_HALL,
 } from '../models/lamp-ids';
 
 export function translateLampId(lampId: number) {
 	switch (lampId) {
 		case LAMP_ID_JEAN:
 			return 'LAMP_JEAN';
+		case LAMP_ID_HALL:
+			return 'LAMP_HALL';
 		case LAMP_ID_MIDDLE:
 			return 'LAMP_MIDDLE';
 		case LAMP_ID_RAFA:
