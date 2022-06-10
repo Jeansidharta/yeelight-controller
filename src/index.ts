@@ -1,10 +1,12 @@
 import { sendDiscoveryMessage } from './discovery';
-import { getAllFoundLamps, getLamp } from './lamp/lamps-cache';
+import { getAllFoundLamps, getLamp } from './lamps-cache';
 import express from 'express';
 import cors from 'cors';
 import { sleep } from './lib/sleep';
 import { jsonStringifyDOM } from './lib/json-stringify-dom';
 import { log, LoggerLevel } from './logger';
+import './websocket';
+import { translateLampId } from './lib/translate-lamp-id';
 
 const PORT = process.env.PORT || 3056;
 
@@ -82,7 +84,9 @@ app.post('/lamp/rawmethod', async (req, res) => {
 	const params = req.body.args as string[];
 	const targets = req.body.targets as number[];
 	log(
-		`Received raw method "${method}" with params "${params}" for targets "${targets}"`,
+		`Received raw method "${method}" with params "${params}" for targets "${targets.map(
+			translateLampId,
+		)}"`,
 		LoggerLevel.DEBUG,
 	);
 

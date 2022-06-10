@@ -1,4 +1,7 @@
 import net from 'net';
+import { addOrUpdateLamp } from '../lamps-cache';
+import { parseRawLampState } from '../lib/parse-raw-lamp-state';
+import { translateLampId } from '../lib/translate-lamp-id';
 import { log, LoggerLevel } from '../logger';
 import { LampResponse } from './lamp-response';
 
@@ -8,7 +11,7 @@ import { LampResponse } from './lamp-response';
 export class LampSender {
 	connection: net.Socket | null;
 	lampIp: string;
-	onReceivedDataFromLamp?: (lampResponse: LampResponse) => void;
+	lampId: number;
 
 	destroy() {
 		this.connection?.destroy();
@@ -18,10 +21,10 @@ export class LampSender {
 		return this.connection !== null;
 	}
 
-	private constructor(lampIp: string) {
+	private constructor(lampIp: string, lampId: number) {
 		this.lampIp = lampIp;
+		this.lampId = lampId;
 		this.connection = null;
-		this.onReceivedDataFromLamp = undefined;
 	}
 
 	async connect() {
@@ -57,9 +60,7 @@ export class LampSender {
 			const dataString = data.toString('utf8');
 			try {
 				const responses = LampResponse.createFromString(dataString);
-				if (this.onReceivedDataFromLamp) {
-					responses.forEach(response => this.onReceivedDataFromLamp!(response));
-				}
+				responses.forEach(response => this.onReceivedDataFromLamp!(response));
 			} catch (e: unknown) {
 				const error = e as Error;
 				// Prevent whole app from crashing.
@@ -74,8 +75,8 @@ export class LampSender {
 	 * The main "constructor" of this class. It creates a TCP connection to the
 	 * target lamp, and keeps the connection open for sending messages.
 	 */
-	static async create(lampIp: string) {
-		const sender = new LampSender(lampIp);
+	static async create(lampIp: string, lampId: number) {
+		const sender = new LampSender(lampIp, lampId);
 		await sender.connect();
 		return sender;
 	}
@@ -105,13 +106,34 @@ export class LampSender {
 		});
 	}
 
-	/**
-	 * This static function creates a LampSender and immediatly sends a message thgouth it.
-	 * It's useful if you want to send a message and disconnect.
-	 */
-	static async sendMessage(lampIp: string, message: string) {
-		const sender = await LampSender.create(lampIp);
-		const response = await sender.sendMessage(message);
-		return response;
+	onReceivedDataFromLamp(lampResponse: LampResponse) {
+		if (lampResponse.isResult()) {
+			if (lampResponse.isResultOk()) {
+				log(
+					`Received confirmation from lamp ${translateLampId(this.lampId)}`,
+					LoggerLevel.COMPLETE,
+				);
+			} else {
+				log(`Received failure from lamp ${translateLampId(this.lampId)}`, LoggerLevel.MINIMAL);
+			}
+			return;
+		} else if (lampResponse.isUpdate()) {
+			log(
+				`Update received from lamp ${translateLampId(this.lampId)} ${JSON.stringify(
+					lampResponse.params,
+				)}`,
+				LoggerLevel.COMPLETE,
+			);
+			const params = lampResponse.params;
+			if (!params) return;
+			addOrUpdateLamp(parseRawLampState(params), this.lampId);
+		} else if (lampResponse.isError()) {
+			log(
+				`Lamp ${translateLampId(this.lampId)} error message: ${lampResponse.error!.message}`,
+				LoggerLevel.MINIMAL,
+			);
+		} else {
+			log(`Received unknown message from lamp ${lampResponse}`, LoggerLevel.MINIMAL);
+		}
 	}
 }

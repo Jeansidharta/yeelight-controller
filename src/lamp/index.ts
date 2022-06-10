@@ -1,13 +1,8 @@
-import {
-	parseLampMethodToLegibleName,
-	parseLampMethodValue,
-} from '../lib/parse-lamp-method-to-legible-name';
 import { log, LoggerLevel } from '../logger';
 import { MethodReturnValue, MusicAction } from './lamp-methods/enums';
 import { LampSender } from './lamp-sender';
-import { LampState, RawLampState } from '../models/lamp-state';
+import { LampState } from '../models/lamp-state';
 import { MusicServer } from './music-server';
-import { translateLampId } from '../lib/translate-lamp-id';
 
 const defaultState: LampState = {
 	ip: '',
@@ -32,6 +27,7 @@ const defaultState: LampState = {
 	lanControl: true,
 	saveState: 0,
 	smartSwitch: false,
+	brightnessWithZero: 0,
 };
 
 /**
@@ -50,52 +46,16 @@ export class Lamp {
 		return this.state.ip;
 	}
 
-	constructor(state: LampState) {
+	constructor(state: Partial<LampState>) {
 		this.state = { ...defaultState, ...state };
 	}
 
-	updateState(untreatedState: Partial<RawLampState>) {
-		const treatedState: Partial<LampState> = {};
-		Object.entries(untreatedState).forEach(entry => {
-			const stateKey = entry[0] as keyof RawLampState;
-			const stateValue = entry[1] as RawLampState[typeof stateKey];
-			delete untreatedState[stateKey];
-
-			const parsedKey = parseLampMethodToLegibleName(stateKey) as keyof LampState;
-			treatedState[parsedKey] = parseLampMethodValue(stateKey, stateValue) as any as never;
-		});
-		this.state = { ...this.state, ...treatedState };
+	async createSender() {
+		this.sender = await LampSender.create(this.ip, this.id);
 	}
 
-	async createSender() {
-		this.sender = await LampSender.create(this.ip);
-		this.sender.onReceivedDataFromLamp = lampResponse => {
-			if (lampResponse.isResult()) {
-				if (lampResponse.isResultOk()) {
-					log(`Received confirmation from lamp ${translateLampId(this.id)}`, LoggerLevel.COMPLETE);
-				} else {
-					log(`Received failure from lamp ${translateLampId(this.id)}`, LoggerLevel.MINIMAL);
-				}
-				return;
-			} else if (lampResponse.isUpdate()) {
-				log(
-					`Update received from lamp ${translateLampId(this.id)} ${JSON.stringify(
-						lampResponse.params,
-					)}`,
-					LoggerLevel.COMPLETE,
-				);
-				const params = lampResponse.params;
-				if (!params) return;
-				this.updateState(params);
-			} else if (lampResponse.isError()) {
-				log(
-					`Lamp ${translateLampId(this.id)} error message: ${lampResponse.error!.message}`,
-					LoggerLevel.MINIMAL,
-				);
-			} else {
-				log(`Received unknown message from lamp ${lampResponse}`, LoggerLevel.MINIMAL);
-			}
-		};
+	updateState(newState: Partial<LampState>) {
+		this.state = { ...this.state, ...newState };
 	}
 
 	async restartSenderIfNecessary() {
@@ -159,7 +119,7 @@ export class Lamp {
 			if (!this.musicServer) return;
 			this.musicServer.destroy();
 			this.musicServer = null;
-			this.updateState({ music_on: 0 });
+			this.updateState({ isMusicModeOn: false });
 			return;
 		}
 	}

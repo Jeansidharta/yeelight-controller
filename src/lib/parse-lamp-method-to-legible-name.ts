@@ -1,13 +1,16 @@
+import { log, LoggerLevel } from '../logger';
 import { LampState, RawLampState } from '../models/lamp-state';
 
 const NameLegibilityTable: Record<keyof RawLampState, keyof LampState> = {
-	bright_with_zero: 'bright',
-	bright: 'brightWithZero',
+	bright_with_zero: 'brightWithZero',
+	brightness_with_zero: 'brightnessWithZero',
+	bright: 'bright',
 	color_mode: 'colorMode',
 	ct: 'colorTemperature',
 	fw_ver: 'firmwareVersion',
 	hue: 'hue',
 	id: 'id',
+	ip: 'ip',
 	model: 'model',
 	name: 'name',
 	power: 'isPowerOn',
@@ -28,6 +31,7 @@ type NameLegibilityTable = typeof NameLegibilityTable;
 
 const ValueParsingTable: Record<keyof RawLampState, (val: any) => any> = {
 	bright_with_zero: (val: any) => Number(val),
+	brightness_with_zero: (val: any) => Number(val),
 	bright: (val: any) => Number(val),
 	color_mode: (val: any) => {
 		if (val === 1) return 'rgb';
@@ -37,6 +41,7 @@ const ValueParsingTable: Record<keyof RawLampState, (val: any) => any> = {
 	ct: (val: any) => Number(val),
 	fw_ver: (val: any) => val,
 	hue: (val: any) => Number(val),
+	ip: (val: any) => val,
 	id: (val: any) => {
 		if (typeof val === 'string') {
 			return parseInt(val.substring(2), 16);
@@ -77,5 +82,13 @@ export function parseLampMethodValue<T extends keyof NameLegibilityTable>(
 	method: T,
 	value: any,
 ): LampState[NameLegibilityTable[T]] {
-	return ValueParsingTable[method](value);
+	try {
+		return ValueParsingTable[method](value);
+	} catch (e) {
+		log(
+			`Failed fetch function from ValueParsingTable for method ${method}, with value ${value}`,
+			LoggerLevel.MINIMAL,
+		);
+		throw e;
+	}
 }

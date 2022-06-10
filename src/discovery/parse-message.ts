@@ -1,4 +1,4 @@
-import { LampState } from '../models/lamp-state';
+import { RawLampState } from '../models/lamp-state';
 import { log, LoggerLevel } from '../logger';
 
 function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | null {
@@ -13,7 +13,7 @@ function validateMessageFirstLine(firstLine: string): 'NOTIFY' | 'RESPONSE' | nu
 /**
  * Parses SSDP messages (both discovery and notification messages).
  */
-export function parseMessage(message: string): LampState | undefined {
+export function parseMessage(message: string): Partial<RawLampState> | undefined {
 	const lines = message.split('\r\n');
 	const messageType = validateMessageFirstLine(lines.shift() || '');
 
@@ -45,28 +45,22 @@ export function parseMessage(message: string): LampState | undefined {
 		return;
 	}
 
-	function parseColorMode() {
-		const colorModeNumber = Number(headers.color_mode);
-		if (colorModeNumber === 1) return 'rgb';
-		else if (colorModeNumber === 2) return 'temperature';
-		else return 'hsv';
-	}
-
 	const lampState = {
-		bright: Number(headers.bright),
-		colorTemperature: Number(headers.ct),
-		colorMode: parseColorMode(),
-		firmwareVersion: Number(headers.fw_ver),
-		hue: Number(headers.hue),
+		bright: headers.bright,
+		ct: headers.ct,
+		color_mode: headers.color_mode,
+		fw_ver: headers.fw_ver,
+		hue: headers.hue,
+		// The ID must be handled here, so we know what lamp we're talking about
 		id: parseInt((headers.id || '').substring(2), 16),
 		ip: ipMatchResult[1],
 		model: headers.model!,
 		name: headers.name!,
-		isPowerOn: headers.power === 'on',
-		rgb: Number(headers.rgb),
-		saturation: Number(headers.sat),
-		supportedMethods: (headers.support || '').split(' '),
-	} as LampState;
+		power: headers.power,
+		rgb: headers.rgb,
+		sat: headers.sat,
+		support: headers.support,
+	} as Partial<RawLampState>;
 
 	return lampState;
 }

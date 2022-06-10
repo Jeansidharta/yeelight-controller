@@ -20,6 +20,7 @@ export type LampState = {
 	lanControl: boolean;
 	delayOff: boolean;
 	saveState: number;
+	brightnessWithZero: number;
 	brightWithZero: number;
 };
 
@@ -44,5 +45,7 @@ export type RawLampState = {
 	lan_ctrl: 0 | 1;
 	delayoff: 0 | 1;
 	save_state: number;
+	brightness_with_zero: number;
 	bright_with_zero: number;
+	ip: string;
 };

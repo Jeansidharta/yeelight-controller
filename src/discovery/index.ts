@@ -9,7 +9,8 @@
 /******************************************************************************/
 
 import dgram from 'dgram';
-import { addOrUpdateLamp } from '../lamp/lamps-cache';
+import { addOrUpdateLamp } from '../lamps-cache';
+import { parseRawLampState } from '../lib/parse-raw-lamp-state';
 import { log, LoggerLevel } from '../logger';
 import { parseMessage } from './parse-message';
 
@@ -37,9 +38,9 @@ let discoverySocket: dgram.Socket | null = null;
  */
 async function handleSocketMessage(data: Buffer) {
 	const message = data.toString('utf8');
-	const lamp = parseMessage(message);
-	if (!lamp) return;
-	addOrUpdateLamp(lamp);
+	const rawLampState = parseMessage(message);
+	if (!rawLampState) return;
+	addOrUpdateLamp(parseRawLampState(rawLampState));
 }
 
 /**

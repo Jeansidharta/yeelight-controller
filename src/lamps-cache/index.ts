@@ -6,30 +6,34 @@
 /*                                                                            */
 /******************************************************************************/
 
-import { Lamp } from '.';
+import { Lamp } from '../lamp';
 import { sleep } from '../lib/sleep';
 import { translateLampId } from '../lib/translate-lamp-id';
 import { log, LoggerLevel } from '../logger';
 import { LampState } from '../models/lamp-state';
+import { LampsEventEmitter } from './event-emitter';
 
 export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;
+export const lampsEventEmitter = new LampsEventEmitter();
 
-export async function addOrUpdateLamp(lampInfo: LampState) {
-	const cachedLamp = lamps[lampInfo.id];
+export async function addOrUpdateLamp(lampInfo: Partial<LampState>, lampId?: number) {
+	const id = lampId || lampInfo.id;
+	if (!id) throw new Error(`function addOrUpdateLamp received an empty id`);
+	const cachedLamp = lamps[id];
 	if (!cachedLamp) {
 		lampsCount++;
 		log(
-			`New lamp discovered of ID ${translateLampId(
-				lampInfo.id,
-			)}, there are now ${lampsCount} lamps`,
+			`New lamp discovered of ID ${translateLampId(id)}, there are now ${lampsCount} lamps`,
 			LoggerLevel.COMPLETE,
 		);
 		const newLamp = new Lamp(lampInfo);
-		lamps[lampInfo.id] = newLamp;
+		lamps[id] = newLamp;
+		lampsEventEmitter.emit('NEW_LAMP', newLamp.state);
 	} else {
-		log(`Lamp of ID ${translateLampId(lampInfo.id)} updated`, LoggerLevel.COMPLETE);
-		cachedLamp.state = lampInfo;
+		log(`Lamp of ID ${translateLampId(id)} updated`, LoggerLevel.COMPLETE);
+		cachedLamp.updateState(lampInfo);
+		lampsEventEmitter.emit('NEW_LAMP', cachedLamp.state);
 	}
 }
 
