@@ -6,6 +6,7 @@ import {
 	LAMP_ID_TV,
 	LAMP_ID_WINDOW,
 	LAMP_ID_HALL,
+	LAMP_ID_STRIP_SALA,
 } from '../models/lamp-ids';
 
 export function translateLampId(lampId: number) {
@@ -24,6 +25,8 @@ export function translateLampId(lampId: number) {
 			return 'LAMP_TV';
 		case LAMP_ID_WINDOW:
 			return 'LAMP_WINDOW';
+		case LAMP_ID_STRIP_SALA:
+			return 'LAMP_STRIP_SALA';
 		default:
 			return `Unknown lamp id ${lampId}`;
 	}
