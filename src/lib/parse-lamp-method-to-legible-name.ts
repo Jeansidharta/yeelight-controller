@@ -30,32 +30,33 @@ const NameLegibilityTable: Record<keyof RawLampState, keyof LampState> = {
 type NameLegibilityTable = typeof NameLegibilityTable;
 
 const ValueParsingTable: Record<keyof RawLampState, (val: any) => any> = {
-	bright_with_zero: (val: any) => Number(val),
-	brightness_with_zero: (val: any) => Number(val),
-	bright: (val: any) => Number(val),
-	color_mode: (val: any) => {
-		if (val === 1) return 'rgb';
-		else if (val === 2) return 'temperature';
+	bright_with_zero: (val: string) => Number(val),
+	brightness_with_zero: (val: string) => Number(val),
+	bright: (val: string) => Number(val),
+	color_mode: (val: string) => {
+		const valNumber = Number(val);
+		if (valNumber === 1) return 'rgb';
+		else if (valNumber === 2) return 'temperature';
 		else return 'hsv';
 	},
-	ct: (val: any) => Number(val),
-	fw_ver: (val: any) => val,
-	hue: (val: any) => Number(val),
-	ip: (val: any) => val,
-	id: (val: any) => {
+	ct: (val: string) => Number(val),
+	fw_ver: (val: string) => val,
+	hue: (val: string) => Number(val),
+	ip: (val: string) => val,
+	id: (val: string) => {
 		if (typeof val === 'string') {
 			return parseInt(val.substring(2), 16);
 		} else {
 			return Number(val);
 		}
 	},
-	model: (val: any) => val,
-	name: (val: any) => val,
-	power: (val: any) => val === 'on',
-	rgb: (val: any) => Number(val),
-	sat: (val: any) => Number(val),
-	support: (val: any) => val.split(' '),
-	flowing: (val: any) => Boolean(val),
+	model: (val: string) => val,
+	name: (val: string) => val,
+	power: (val: string) => val === 'on',
+	rgb: (val: string) => Number(val),
+	sat: (val: string) => Number(val),
+	support: (val: string) => val.split(' '),
+	flowing: (val: string) => Boolean(val),
 	flow_params: (val: string) => {
 		const allNumbers = val.split(',').map(num => Number(num));
 		const args: [number, number, number, number][] = [];
@@ -64,12 +65,12 @@ const ValueParsingTable: Record<keyof RawLampState, (val: any) => any> = {
 		}
 		return args;
 	},
-	music_on: (val: any) => Boolean(val),
-	smart_switch: (val: any) => Boolean(val),
-	init_power_opt: (val: any) => Number(val),
-	lan_ctrl: (val: any) => Boolean(val),
-	delayoff: (val: any) => Boolean(val),
-	save_state: (val: any) => val,
+	music_on: (val: string) => Boolean(val),
+	smart_switch: (val: string) => Boolean(val),
+	init_power_opt: (val: string) => Number(val),
+	lan_ctrl: (val: string) => Boolean(val),
+	delayoff: (val: string) => Boolean(val),
+	save_state: (val: string) => val,
 } as const;
 
 export function parseLampMethodToLegibleName<T extends keyof NameLegibilityTable>(

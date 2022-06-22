@@ -45,12 +45,21 @@ function parseData(data: string) {
 }
 
 server.on('connection', (ws, req) => {
-	const ip = req.socket.remoteAddress;
-	log(`WebSocket connection started from ${ip}`, LoggerLevel.COMPLETE);
+	const ip = req.headers['x-real-ip'] as string;
+	log(
+		`WebSocket connection started from ${ip}. There are now ${server.clients.size} connections`,
+		LoggerLevel.COMPLETE,
+	);
+
+	ws.on('close', () => {
+		log(
+			`Websocket connection with ${ip} closed. There are now ${server.clients.size} connections`,
+			LoggerLevel.COMPLETE,
+		);
+	});
 
 	ws.on('message', data => {
 		const message = data.toString('utf8');
-		console.log('message', message);
 		const parsedMessage = parseData(message);
 		if (!parsedMessage) return;
 		if (isWebsocketMessageRequestAllLamps(parsedMessage)) {

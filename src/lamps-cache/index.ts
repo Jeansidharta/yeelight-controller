@@ -17,7 +17,7 @@ export const lamps: Record<number, Lamp> = Object.create(null);
 let lampsCount = 0;
 export const lampsEventEmitter = new LampsEventEmitter();
 
-export async function addOrUpdateLamp(lampInfo: Partial<LampState>, lampId?: number) {
+export function addOrUpdateLamp(lampInfo: Partial<LampState>, lampId?: number) {
 	const id = lampId || lampInfo.id;
 	if (!id) throw new Error(`function addOrUpdateLamp received an empty id`);
 	const cachedLamp = lamps[id];

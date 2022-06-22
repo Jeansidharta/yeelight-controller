@@ -21,39 +21,32 @@ export class LampSender {
 		return this.connection !== null;
 	}
 
-	private constructor(lampIp: string, lampId: number) {
+	constructor(lampIp: string, lampId: number) {
 		this.lampIp = lampIp;
 		this.lampId = lampId;
 		this.connection = null;
+		this.connect();
 	}
 
-	async connect() {
-		const socket = await new Promise<net.Socket>(resolve => {
-			log(`Connecing to lamp on "${this.lampIp}"...`, LoggerLevel.COMPLETE);
-			const socket: net.Socket = net.createConnection({
-				port: 55443,
-				host: this.lampIp,
-				family: 4,
-			});
+	connect() {
+		const socket = net.createConnection({
+			port: 55443,
+			host: this.lampIp,
+			family: 4,
+		});
 
-			socket.on('connect', () => {
-				log(`Connected to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
-				resolve(socket);
-			});
+		log(`Connecing to lamp on "${this.lampIp}"...`, LoggerLevel.COMPLETE);
+		socket.on('connect', () => {
+			log(`Connected to lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
+		});
 
-			socket.on('error', err => {
-				log(`ERROR ON LAMP SENDER WITH LAMP ${this.lampIp} ${err}`, LoggerLevel.MINIMAL);
-			});
+		socket.on('error', err => {
+			log(`ERROR ON LAMP SENDER WITH LAMP ${this.lampIp} ${err}`, LoggerLevel.MINIMAL);
+		});
 
-			socket.on('close', () => {
-				if (this.connection) {
-					log(`Connection closed lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
-					this.connection.destroy();
-					this.connection = null;
-				} else {
-					log(`Connection closed with unknown lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
-				}
-			});
+		socket.on('close', () => {
+			log(`Connection closed lamp on "${this.lampIp}"`, LoggerLevel.COMPLETE);
+			this.connection = null;
 		});
 
 		socket.on('data', data => {
@@ -71,39 +64,9 @@ export class LampSender {
 		this.connection = socket;
 	}
 
-	/**
-	 * The main "constructor" of this class. It creates a TCP connection to the
-	 * target lamp, and keeps the connection open for sending messages.
-	 */
-	static async create(lampIp: string, lampId: number) {
-		const sender = new LampSender(lampIp, lampId);
-		await sender.connect();
-		return sender;
-	}
-
-	/**
-	 * Sends a message to the lamp that this LampSender is attached to.
-	 * @returns The result message, sent by the lamp.
-	 */
 	async sendMessage(message: string) {
-		const connection = this.connection;
-		if (!connection) throw new Error('You must have an active connection.');
-		return new Promise<LampResponse>((resolve, reject) => {
-			connection.on('data', function handleData(chunk) {
-				const responses = LampResponse.createFromString(chunk.toString('utf8'));
-				responses.some(response => {
-					if (!response.isResult() && !response.isError()) return false;
-
-					if (response.isError()) reject(response);
-					else resolve(response);
-
-					connection.off('data', handleData);
-					return true;
-				});
-			});
-
-			connection.write(message);
-		});
+		if (!this.connection) this.connect();
+		this.connection!.write(message);
 	}
 
 	onReceivedDataFromLamp(lampResponse: LampResponse) {

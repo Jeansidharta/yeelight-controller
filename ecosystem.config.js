@@ -3,28 +3,31 @@
 // https://pm2.keymetrics.io/docs/usage/application-declaration/
 
 module.exports = {
-	apps: [{
-		// TODO - add application name here
-		name: 'Yeelight-backend',
+	apps: [
+		{
+			// TODO - add application name here
+			name: 'Yeelight-backend',
 
-		// The serve script will simply serve the contents of the folder specified in the.
-		// arguments
-		script: 'npm',
+			// The serve script will simply serve the contents of the folder specified in the.
+			// arguments
+			script: 'npm',
 
-		// Serves the `out` folder, which is where the site will be staticaly generated.
-		// This folder will be generated when you run `npm run build-export`.
-		args: 'start',
+			// Serves the `out` folder, which is where the site will be staticaly generated.
+			// This folder will be generated when you run `npm run build-export`.
+			args: 'start',
 
-		// If `watch` is true, a file watcher will be attached to the whole project.
-		// Whenever any file in the project is changed, `pm2` will reload this process.
-		watch: false,
+			// If `watch` is true, a file watcher will be attached to the whole project.
+			// Whenever any file in the project is changed, `pm2` will reload this process.
+			watch: false,
 
-		// Adds timestamp for logs
-		time: true,
+			// Adds timestamp for logs
+			time: true,
 
-		env: {
-			PORT: '3056',
-			LOGGER_LEVEL: 'minimal'
+			env: {
+				PORT: '3056',
+				WEBSOCKET_PORT: '3057',
+				LOGGER_LEVEL: 'debug',
+			},
 		},
-	}],
+	],
 };

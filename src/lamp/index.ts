@@ -48,19 +48,11 @@ export class Lamp {
 
 	constructor(state: Partial<LampState>) {
 		this.state = { ...defaultState, ...state };
-	}
-
-	async createSender() {
-		this.sender = await LampSender.create(this.ip, this.id);
+		this.sender = new LampSender(this.ip, this.id);
 	}
 
 	updateState(newState: Partial<LampState>) {
 		this.state = { ...this.state, ...newState };
-	}
-
-	async restartSenderIfNecessary() {
-		if (!this.sender) await this.createSender();
-		if (!this.sender!.isConnected) await this.sender!.connect();
 	}
 
 	destroy() {
@@ -74,7 +66,7 @@ export class Lamp {
 	 */
 	async createAndSendMessage({ method, params }: MethodReturnValue) {
 		const methodObject = {
-			id: this.state.id,
+			id: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
 			method,
 			params,
 		};
@@ -83,7 +75,6 @@ export class Lamp {
 			log('Sending through music server', LoggerLevel.DEBUG);
 			this.musicServer.sendMessage(message);
 		} else {
-			await this.restartSenderIfNecessary();
 			await this.sender!.sendMessage(message);
 		}
 	}
